@@ -1,0 +1,31 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Material Request Item",
+ "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2020-03-18 15:13:14.837978",
+   "default_value": null,
+   "doc_type": "Material Request Item",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "item_code",
+   "idx": 0,
+   "modified": "2020-03-18 15:13:14.837978",
+   "modified_by": "elvistarus@mtrh.go.ke",
+   "name": "Material Request Item-item_code-depends_on",
+   "owner": "elvistarus@mtrh.go.ke",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "depends_on",
+   "property_type": "Data",
+   "value": "item_group==frm.doc.item_category"
+  }
+ ],
+ "sync_on_migrate": 1
+}

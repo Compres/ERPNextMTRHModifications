@@ -1,0 +1,65 @@
+{
+ "creation": "2020-03-28 21:01:19.379804",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "bidder",
+  "item_name",
+  "item_price",
+  "rate_bidder",
+  "tech_specifications",
+  "chosen_supplier"
+ ],
+ "fields": [
+  {
+   "fieldname": "bidder",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bidder"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Name"
+  },
+  {
+   "fieldname": "item_price",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item price"
+  },
+  {
+   "fieldname": "rate_bidder",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "in_preview": 1,
+   "label": "Rate Bidder"
+  },
+  {
+   "fieldname": "tech_specifications",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Add Tech Specifications"
+  },
+  {
+   "default": "0",
+   "fieldname": "chosen_supplier",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Chosen Supplier"
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-04-14 12:47:02.739004",
+ "modified_by": "elvistarus@mtrh.go.ke",
+ "module": "MTRH Dev",
+ "name": "Requests For Quotations",
+ "owner": "elvistarus@mtrh.go.ke",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

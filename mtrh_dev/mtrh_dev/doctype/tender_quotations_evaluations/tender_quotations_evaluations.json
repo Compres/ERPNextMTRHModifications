@@ -1,0 +1,79 @@
+{
+ "creation": "2020-03-28 21:04:40.686469",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "rfq_no",
+  "rfqbutton",
+  "item_name",
+  "bidders",
+  "amended_from",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "rfq_no",
+   "fieldtype": "Link",
+   "label": "Request for quotation Number",
+   "options": "Request for Quotation"
+  },
+  {
+   "fieldname": "rfqbutton",
+   "fieldtype": "Button",
+   "label": "Get Requests For Quotations"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Link",
+   "label": "Item Name",
+   "options": "Item"
+  },
+  {
+   "fieldname": "bidders",
+   "fieldtype": "Table",
+   "label": "Bidders",
+   "options": "Requests For Quotations"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Tender Quotations Evaluations",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "status==1",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "status"
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2020-04-01 17:49:43.866288",
+ "modified_by": "Administrator",
+ "module": "MTRH Dev",
+ "name": "Tender Quotations Evaluations",
+ "owner": "elvistarus@mtrh.go.ke",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
