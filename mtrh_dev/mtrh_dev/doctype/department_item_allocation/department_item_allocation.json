@@ -6,7 +6,8 @@
  "engine": "InnoDB",
  "field_order": [
   "department_name",
-  "item_section"
+  "item_section",
+  "status"
  ],
  "fields": [
   {
@@ -21,11 +22,17 @@
    "fieldname": "item_section",
    "fieldtype": "Table",
    "ignore_user_permissions": 1,
+   "in_preview": 1,
    "label": "Item Section",
    "options": "Buyer Section"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "label": "status"
   }
  ],
- "modified": "2020-04-02 17:10:44.175914",
+ "modified": "2020-04-21 13:24:15.235241",
  "modified_by": "salimmwaura@mtrh.go.ke",
  "module": "MTRH Dev",
  "name": "Department Item Allocation",

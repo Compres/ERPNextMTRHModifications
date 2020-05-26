@@ -1,6 +1,6 @@
 {
  "allow_import": 1,
- "autoname": "format:PROC-{department_name}-{fiscal_year}",
+ "autoname": "format:PROC-{department_name}-{fiscal_year}-{###}",
  "creation": "2020-04-02 10:57:28.988447",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -11,6 +11,7 @@
   "fiscal_year",
   "item_group",
   "procurement_item",
+  "action_log",
   "amended_from"
  ],
  "fields": [
@@ -19,8 +20,7 @@
    "fieldname": "department_name",
    "fieldtype": "Data",
    "label": "Department",
-   "read_only": 1,
-   "unique": 1
+   "read_only": 1
   },
   {
    "fieldname": "fiscal_year",
@@ -57,11 +57,18 @@
    "label": "Company",
    "options": "Company",
    "read_only": 1
+  },
+  {
+   "fieldname": "action_log",
+   "fieldtype": "Table",
+   "label": "Action Log",
+   "options": "Approval Log",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-04-06 21:01:34.172963",
- "modified_by": "salimmwaura@mtrh.go.ke",
+ "modified": "2020-05-12 09:17:53.571602",
+ "modified_by": "Administrator",
  "module": "MTRH Dev",
  "name": "Procurement Plan",
  "name_case": "UPPER CASE",

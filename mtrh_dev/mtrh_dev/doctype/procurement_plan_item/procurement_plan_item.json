@@ -51,7 +51,22 @@
   "section_break_37",
   "fs_yr",
   "department_name",
-  "page_break"
+  "page_break",
+  "procurement_plan_boilerplate_section",
+  "procurement_method",
+  "column_break_49",
+  "source_of_funds",
+  "time_process_section",
+  "inviteadvertise_tender",
+  "bid_opening",
+  "bid_evaluation",
+  "column_break_60",
+  "tender_award",
+  "notification_of_award",
+  "contract_signing",
+  "total_time_to_contract_signature",
+  "section_break_61",
+  "date_for_completion_of_contract"
  ],
  "fields": [
   {
@@ -235,8 +250,7 @@
    "fieldname": "rate",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Rate",
-   "read_only": 1
+   "label": "Rate"
   },
   {
    "fieldname": "amount",
@@ -418,11 +432,88 @@
    "label": "Department Name",
    "options": "Department",
    "read_only": 1
+  },
+  {
+   "fieldname": "procurement_method",
+   "fieldtype": "Link",
+   "label": "Procurement Method",
+   "options": "Procurement Method",
+   "reqd": 1
+  },
+  {
+   "fieldname": "procurement_plan_boilerplate_section",
+   "fieldtype": "Section Break",
+   "label": "Procurement Plan Boilerplate"
+  },
+  {
+   "fieldname": "column_break_49",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "source_of_funds",
+   "fieldtype": "Select",
+   "label": "Source of funds",
+   "options": "\nGovernment of Kenya\nDonor"
+  },
+  {
+   "description": "Number of days you plan to execute each of the tasks e.g if Bid evaluation takes 2 (months), input 60 (days)",
+   "fieldname": "time_process_section",
+   "fieldtype": "Section Break",
+   "label": "Time Process"
+  },
+  {
+   "fieldname": "inviteadvertise_tender",
+   "fieldtype": "Int",
+   "label": "Invite/advertise tender"
+  },
+  {
+   "fieldname": "bid_opening",
+   "fieldtype": "Int",
+   "label": "Bid opening"
+  },
+  {
+   "fieldname": "bid_evaluation",
+   "fieldtype": "Int",
+   "label": "Bid evaluation"
+  },
+  {
+   "fieldname": "tender_award",
+   "fieldtype": "Int",
+   "label": "Tender award"
+  },
+  {
+   "fieldname": "notification_of_award",
+   "fieldtype": "Int",
+   "label": "Notification of award"
+  },
+  {
+   "fieldname": "contract_signing",
+   "fieldtype": "Int",
+   "label": "Contract signing"
+  },
+  {
+   "fieldname": "total_time_to_contract_signature",
+   "fieldtype": "Int",
+   "label": "Total time to contract signature"
+  },
+  {
+   "fieldname": "date_for_completion_of_contract",
+   "fieldtype": "Date",
+   "label": "Date for completion of contract"
+  },
+  {
+   "fieldname": "column_break_60",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_61",
+   "fieldtype": "Section Break",
+   "label": "Date for Completion of Contract fulfilment"
   }
  ],
  "istable": 1,
- "modified": "2020-04-06 21:24:30.967644",
- "modified_by": "salimmwaura@mtrh.go.ke",
+ "modified": "2020-05-10 12:38:57.713483",
+ "modified_by": "Administrator",
  "module": "MTRH Dev",
  "name": "Procurement Plan Item",
  "owner": "salimmwaura@mtrh.go.ke",

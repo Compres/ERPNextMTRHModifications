@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from frappe import _
 from . import __version__ as app_version
 
 app_name = "mtrh_dev"
@@ -17,6 +18,7 @@ app_license = "MIT"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/mtrh_dev/css/mtrh_dev.css"
 # app_include_js = "/assets/mtrh_dev/js/mtrh_dev.js"
+app_include_js = ["/assets/mtrh_dev/js/utilities.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/mtrh_dev/css/mtrh_dev.css"
@@ -51,6 +53,10 @@ app_license = "MIT"
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
 
+standard_portal_menu_items = [	
+	{"title": _("Supplier Delivery Note"), "route": "/Supplier-Delivery-Note/Supplier-Delivery-Note", "role": "Supplier"}	
+]
+
 # Installation
 # ------------
 
@@ -79,13 +85,40 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+
+doc_events = {
+	"Material Request":{
+		"before_save":"mtrh_dev.mtrh_dev.utilities.process_workflow_log",	
+		"on_cancel": "mtrh_dev.mtrh_dev.utilities.process_workflow_log",		
+		"before_submit":["mtrh_dev.mtrh_dev.utilities.process_workflow_log","mtrh_dev.mtrh_dev.workflow_custom_action.auto_generate_purchase_order_by_material_request"]
+	},
+	"Tender Quotations Evaluations":{
+		"before_save":"mtrh_dev.mtrh_dev.utilities.process_workflow_log",
+		"before_submit":"mtrh_dev.mtrh_dev.utilities.process_workflow_log",
+		"on_cancel": "mtrh_dev.mtrh_dev.utilities.process_workflow_log"
+	},
+	"Procurement Plan":{
+		"before_save":"mtrh_dev.mtrh_dev.utilities.process_workflow_log",
+		"before_submit":"mtrh_dev.mtrh_dev.utilities.process_workflow_log",
+		"on_cancel": "mtrh_dev.mtrh_dev.utilities.process_workflow_log"
+	},
+	"Purchase Order":{
+		"before_save":["mtrh_dev.mtrh_dev.utilities.process_workflow_log","mtrh_dev.mtrh_dev.workflow_custom_action.update_material_request_item_status"],
+		"before_submit":"mtrh_dev.mtrh_dev.utilities.validate_budget",
+		"on_cancel": "mtrh_dev.mtrh_dev.utilities.process_workflow_log"
+	},
+	"Tender Quotations Evaluations":{
+		"before_submit":"mtrh_dev.mtrh_dev.tqe_on_submit_operations.apply_tqe_operation"
+	},
+	"Request for Quotation":{
+		"before_save":"mtrh_dev.mtrh_dev.workflow_custom_action.update_material_request_item_status",		
+		"on_submit":["erpnext.buying.doctype.request_for_quotation.request_for_quotation.send_supplier_emails","mtrh_dev.mtrh_dev.tqe_evaluation.send_adhoc_members_emails"]
+				
+	},
+	"Tender Quotation Award":{
+		"before_submit":"mtrh_dev.mtrh_dev.doctype.tender_quotation_award.tender_quotation_award.update_price_list"
+	}
+ }
 
 # Scheduled Tasks
 # ---------------
@@ -107,6 +140,15 @@ app_license = "MIT"
 # 		"mtrh_dev.tasks.monthly"
 # 	]
 # }
+
+scheduler_events = {
+    "cron": {
+        "* * * * *": [
+            "frappe.email.queue.flush",
+			"frappe.email.doctype.email_account.email_account.pull"
+        ]
+    }
+}
 
 # Testing
 # -------
