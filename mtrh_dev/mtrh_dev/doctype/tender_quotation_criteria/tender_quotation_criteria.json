@@ -1,6 +1,6 @@
 {
  "autoname": "field:rfq_no",
- "creation": "2020-05-21 11:59:10.288977",
+ "creation": "2020-05-28 23:10:00.388005",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -50,7 +50,7 @@
    "fieldname": "details",
    "fieldtype": "Table",
    "label": "Details",
-   "options": "Tender Quotation Scorecard Details",
+   "options": "Tender Quotation Criteria Details",
    "reqd": 1
   },
   {
@@ -64,17 +64,17 @@
    "fieldname": "load_from_existing_tenderquotation",
    "fieldtype": "Link",
    "label": "Load from existing tender/quotation",
-   "options": "Tender Quotation Scorecard"
+   "options": "Tender Quotation Criteria"
   },
   {
    "fieldname": "section_break55",
    "fieldtype": "Section Break"
   }
  ],
- "modified": "2020-05-21 16:45:10.634265",
+ "modified": "2020-05-28 23:15:07.453503",
  "modified_by": "Administrator",
  "module": "MTRH Dev",
- "name": "Tender Quotation Scorecard",
+ "name": "Tender Quotation Criteria",
  "owner": "Administrator",
  "permissions": [
   {

@@ -18,12 +18,15 @@ order = Class.extend({
 	init: function(){
 		this.onfocus_select_all();
 		this.change_qty();
+		this.load_qty_balance();
 		this.change_rate();
 		this.change_quantity_amount();
 		this.terms();
 		this.generatedeliverynote();
 		this.navigate_quotations();
 		this.change_attachments();
+		this.Check_Balance_Remaining();
+		
 	},
 
 	onfocus_select_all: function(){
@@ -31,6 +34,14 @@ order = Class.extend({
 			$(this).select();
 		})
 	},
+
+	load_qty_balance: function(){
+		var me = this
+		//me.qty="450"
+		$(this).val(format_number(me.qty, doc.number_format, 2));
+		//alert(me.qty)
+	},
+
 	
 	change_attachments: function(){
 		var me = this;
@@ -45,6 +56,7 @@ order = Class.extend({
 			})
 		})
 	},
+	
 
 	change_qty: function(){
 		var me = this;
@@ -58,6 +70,7 @@ order = Class.extend({
 		})
 	},
 
+	
 	change_rate: function(){
 		var me = this;
 		$(".rfq-items").on("change", ".rfq-rate", function(){
@@ -74,19 +87,42 @@ order = Class.extend({
 			me.idx = parseFloat($(this).attr('data-idx'));	
 			//alert(me.idx)		
 			me.tosupply = parseFloat($(this).val()) || 0;
+			me.itemcode = parseFloat($(repl('.order-it[data-idx=%(idx)s]',{'idx': me.idx})).val());
 			me.qty = parseFloat($(repl('.order-qty[data-idx=%(idx)s]',{'idx': me.idx})).val());
 			me.rate = parseFloat($(repl('.orderrate[data-idx=%(idx)s]',{'idx': me.idx})).val());
-			me.dnote = parseFloat($(repl('.orderdnote[data-idx=%(idx)s]',{'idx': me.idx})).val());
+			
+			//me.dnote = parseFloat($(repl('.order-dnote[data-idx=%(idx)s]',{'idx': me.idx})).val());
+			//me.rate = parseFloat($(this).val()) || 0;			
+			//me.rate = "55"
+			//parseFloat($(repl('.orderrate[data-idx=%(idx)s]',{'idx': me.idx})).val())		
+			//alert(me.itemcode)
+			//me.qty = parseFloat($(repl('.order-qty[data-idx=%(idx)s]',{'idx': me.idx})).val());	
+			//alert(me.rate)
+			me.Check_Balance_Remaining();					
+			me.update_supply_amount();
+			//$(this).val(format_number(me.rate, doc.number_format, 2));
+		})
+	
+	},
+/*
+	dnote_check: function(){
+		var me = this;		
+		$(".order-items").on("change", ".order-dnote", function(){			
+			me.idx = parseFloat($(this).attr('data-idx'));			
+			me.dnote = parseFloat($(repl('.order-dnote[data-idx=%(idx)s]',{'idx': me.idx})).val());
 			//me.rate = parseFloat($(this).val()) || 0;			
 			//me.rate = "55"
 			//parseFloat($(repl('.orderrate[data-idx=%(idx)s]',{'idx': me.idx})).val())		
 			//alert(me.dnote)
 			//me.qty = parseFloat($(repl('.order-qty[data-idx=%(idx)s]',{'idx': me.idx})).val());	
-			//alert(me.rate)					
+			//alert(me.rate)
+								
 			me.update_supply_amount();
 			//$(this).val(format_number(me.rate, doc.number_format, 2));
 		})
+	
 	},
+	*/
 
 	terms: function(){
 		$(".terms").on("change", ".terms-feedback", function(){
@@ -97,11 +133,13 @@ order = Class.extend({
 	update_supply_amount: function(){
 		var me = this;
 		doc.grand_total = 0.0;
+		 		
 		$.each(doc.items, function(idx, data){
 			if(data.idx == me.idx){				
 				data.qty = me.qty;
 				data.tosupply=me.tosupply;
 				data.rate = me.rate;
+				//data.dnote= me.dnote;
 				//alert(data.rate)
 				data.amount = (me.rate * me.tosupply) || 0.0;
 				//alert(data.amount )
@@ -114,6 +152,8 @@ order = Class.extend({
 		})
 	},
 
+
+	
 	update_qty_rate: function(){
 		var me = this;
 		doc.grand_total = 0.0;
@@ -121,11 +161,10 @@ order = Class.extend({
 			if(data.idx == me.idx){				
 				data.qty = me.qty;
 				data.tosupply=me.tosupply;
-				data.rate = me.rate;
-				
+				data.rate = me.rate;				
 				//alert(data.rate)
 				data.amount = (me.rate * me.tosupply) || 0.0;
-				//alert(data.amount )
+				//alert(data.amount)
 				$(repl('.order-amount[data-idx=%(idx)s]',{'idx': me.idx})).text(format_number(data.amount, doc.number_format, 2));
 				//data.attachments = me.attachments;
 						}
@@ -136,32 +175,79 @@ order = Class.extend({
 		})
 	},
 
-	generatedeliverynote: function(){		
+	generatedeliverynote: function(){
 		
-		$('.btn-gen').click(function(){			
+		$('.btn-gen').click(function(){	
+					
 			var isconfirmed = confirm("Ensure you have entered all field required Are you sure?");
+			var deliverynumber =document.getElementById("deliverynumber").value;
+			if(deliverynumber.length==0)
+			{
+				frappe.throw("Delivery Number Field Empty!!.Kindly Check")
+			}
+			
+			
 			if(isconfirmed){
 				//frappe.freeze();
 				frappe.call({
 					type: "POST",
 					method: "mtrh_dev.mtrh_dev.tqe_evaluation.Generate_Purchase_Receipt_Draft",
 					args: {						
-						doc:doc							
-
+						doc:doc,
+						deliverynumber:deliverynumber	
 					},
 					btn: this,
 					callback: function(r){
-						frappe.unfreeze();
-						if(r.message){
-							$('.btn-sm').hide()
-							//window.location.href = "/supplier-quotations/" + encodeURIComponent(r.message);
-							//window.location.replace("/supplier-quotations/" + encodeURIComponent(r.message));
-							frappe.show_alert("Your submission has been successfull", 10)
-						}
+						alert("You will be redirected to  check on your list of delivery note numbers")
+						//frappe.unfreeze();
+						//if(r.message){
+							//$('.btn-sm').hide()
+							window.location.href = "/deliverynumber/"// + encodeURIComponent(r.message);
+							//window.location.replace("/Supplier-Delivery-Note/Supplier-Delivery-Note/"// + encodeURIComponent(r.message));
+							//frappe.show_alert("Your submission has been successfull", 10)
+						//}
 					}
 				})
 			}
 		})
+	},
+
+	Check_Balance_Remaining: function(){	
+		var me=this;
+		var itemcode =document.getElementById("itemcode").value;
+		//alert(itemcode)
+/*
+		$.each(doc.items, function(idx, data){
+			if(data.idx == me.idx){				
+				data.qty = me.qty;
+				data.itemcode = me.itemcode
+				//alert(data.itemcode)
+		*/		
+				frappe.call({
+					type: "POST",
+					method: "mtrh_dev.mtrh_dev.tqe_evaluation.getquantitybalance",
+					args: {						
+						purchase_order_name:doc.name,
+						itemcode:itemcode
+
+					},
+					callback: function(r){	
+						console.log(r.message)
+						//alert(r.message)
+						if(r.message<=0)
+						{
+							frappe.throw("You have submitted more than required")
+
+						}
+						//$(repl('.order-qty[data-idx=%(idx)s]',{'idx': me.idx})).text(r.message);
+						//$('.order-qty').text(r.message);				
+						
+					}
+				})
+			//}
+		//})
+			//}
+		//})
 	},
 
 	navigate_quotations: function() {

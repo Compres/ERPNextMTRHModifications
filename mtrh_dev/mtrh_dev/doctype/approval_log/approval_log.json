@@ -6,7 +6,8 @@
  "field_order": [
   "action_time",
   "decision",
-  "action_user"
+  "action_user",
+  "signature"
  ],
  "fields": [
   {
@@ -18,7 +19,7 @@
    "read_only": 1
   },
   {
-   "columns": 5,
+   "columns": 3,
    "fieldname": "decision",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -32,10 +33,19 @@
    "in_list_view": 1,
    "label": "Action User",
    "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "signature",
+   "fieldtype": "Signature",
+   "in_list_view": 1,
+   "label": "Signature",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2020-05-12 01:59:46.624891",
+ "modified": "2020-06-01 23:18:43.478294",
  "modified_by": "Administrator",
  "module": "MTRH Dev",
  "name": "Approval Log",

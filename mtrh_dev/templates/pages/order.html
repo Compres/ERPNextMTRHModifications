@@ -74,7 +74,14 @@
 			<div class="col-sm-3 col-8 h6 text-uppercase">
 			<button class="btn btn-primary btn-gen"
     		type="button">	{{ _("Generate Delivery Note") }}</button>
-			</div>		
+			</div>
+			<div class="col-sm-2 col-xs-2 text-right h6 text-uppercase">
+				{{ _("Delivery Number") }}
+			</div>			
+			<div id="dnoteid" class="col-sm-2 col-xs-8 text-right">
+				<input  type="text" id="deliverynumber" name="deliverynumber" value="" class="form-control text-right supplier-dnote"  style="margin-top: 3px;display: inline-block">
+			</div>	
+			
 		</div>
 		<div class="row order-items order-item-header text-muted">			
 			<div class="col-sm-2 col-xs-2 h6 text-uppercase">
@@ -86,9 +93,7 @@
 			<div class="col-sm-2 col-xs-2 text-right h6 text-uppercase">
 				{{ _("Quantity to Supply") }}
 			</div>
-			<div class="col-sm-2 col-xs-2 text-right h6 text-uppercase">
-				{{ _("Delivery Note") }}
-			</div>
+			
 			<div class="col-sm-2 col-xs-2 text-right h6 text-uppercase">
 				{{ _("Amount") }}
 			</div>
@@ -98,7 +103,8 @@
 	<div id="order-items">
 		<div class="row order-items" data-idx="{{ d.idx }}">			
 			<div class="col-sm-2 col-3">
-				{{ item_name_and_description(d) }}
+				{{ item_name_and_description(d) }}					
+				<input  type="hidden" id="itemcode" name="itemcode" value="{{d.item_code}}" class="form-control text-right order-it" data-idx="{{ d.idx }}"  style="margin-top: 3px;display: inline-block">
 			</div>
 			<div class="col-sm-2 col-xs-3 text-right order-qty">				 
 				<input readonly type="text" class="form-control text-right order-qty" style="margin-top: 5px;display: inline-block"
@@ -110,17 +116,13 @@
 			</div>			
 			<div class="col-sm-2 col-xs-2 text-right">
 				<input  type="text" id="tosupply" name="tosupply" value="" class="form-control text-right order-supply" data-idx="{{ d.idx }}"  style="margin-top: 3px;display: inline-block">
-			</div>
-			<div class="col-sm-2 col-xs-2 text-right">
-				<input  type="text" id="dnote" name="dnote" value="" class="form-control text-right orderdnote" data-idx="{{ d.idx }}"  style="margin-top: 3px;display: inline-block">
-			</div>
+			</div>		
 					
 			<div class="col-sm-2 col-xs-2 text-right orderrate">
 				{{ d.amount}}
 				<input readonly type="text" class="form-control text-right orderrate" style="margin-top: 5px;display: inline-block"
-				value = "{{ d.rate}}"	data-idx="{{ d.idx }}">	
-													
-				<span class="tax-grand-total">0.0</span>			
+				value = "{{ d.rate}}"	data-idx="{{ d.idx }}">														
+				<span class="tax-grand-total">0.0</span>						
 				
 			</div>
 			

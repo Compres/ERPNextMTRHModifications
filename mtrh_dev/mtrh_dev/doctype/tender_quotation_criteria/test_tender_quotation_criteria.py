@@ -6,5 +6,5 @@ from __future__ import unicode_literals
 # import frappe
 import unittest
 
-class TestTenderQuotationScorecard(unittest.TestCase):
+class TestTenderQuotationCriteria(unittest.TestCase):
 	pass

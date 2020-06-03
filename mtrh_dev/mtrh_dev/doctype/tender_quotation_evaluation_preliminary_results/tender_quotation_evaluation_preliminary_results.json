@@ -4,20 +4,11 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "attribute",
+  "bidder",
   "score",
   "remarks"
  ],
  "fields": [
-  {
-   "default": "-",
-   "fieldname": "attribute",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Bidder",
-   "read_only": 1,
-   "reqd": 1
-  },
   {
    "default": "0",
    "fieldname": "score",
@@ -32,10 +23,19 @@
    "fieldname": "remarks",
    "fieldtype": "Text Editor",
    "label": "Remarks"
+  },
+  {
+   "default": "-",
+   "fieldname": "bidder",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bidder",
+   "read_only": 1,
+   "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2020-05-22 12:30:34.385664",
+ "modified": "2020-05-28 22:13:32.463908",
  "modified_by": "Administrator",
  "module": "MTRH Dev",
  "name": "Tender Quotation Evaluation Preliminary Results",

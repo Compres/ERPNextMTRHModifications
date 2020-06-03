@@ -25,19 +25,19 @@
   "evaluation_criteria",
   "save_preliminary_results",
   "scorecard",
+  "preliminary_report__findings",
+  "preliminary_status",
   "forward_preliminary",
   "abort_preliminary",
-  "preliminary_status",
-  "preliminary_report__findings",
   "technical_evaluation_section",
   "bidder_id",
   "item",
+  "item_name",
   "technical_criteria",
   "save_technical_evaluation_results",
   "qualitytechnical_evaluation_results",
   "financial_evaluation_section",
   "rfqbutton",
-  "item_name",
   "bidders",
   "status",
   "recommendation",
@@ -101,6 +101,7 @@
    "options": "Tender Quotation Evaluation Preliminary Results"
   },
   {
+   "collapsible": 1,
    "fieldname": "technical_evaluation_section",
    "fieldtype": "Section Break",
    "label": "Technical Evaluation"
@@ -111,10 +112,12 @@
    "label": "Get Requests For Quotations"
   },
   {
+   "default": "-",
    "fieldname": "item_name",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Item Name",
-   "options": "Item"
+   "read_only": 1
   },
   {
    "description": "Bidder quotes for this item. 0.0 = no quote.",
@@ -141,7 +144,6 @@
    "description": "Procurement opinion as to the decision made in this process.",
    "fieldname": "procurement_opinion",
    "fieldtype": "Text Editor",
-   "in_list_view": 1,
    "label": "Procurement Opinion"
   },
   {
@@ -189,6 +191,7 @@
    "options": "Tender Quotation Evaluation Technical Results"
   },
   {
+   "collapsible": 1,
    "fieldname": "financial_evaluation_section",
    "fieldtype": "Section Break",
    "label": "Financial Evaluation"
@@ -269,7 +272,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2020-05-22 18:32:09.426236",
+ "modified": "2020-05-29 22:25:03.834671",
  "modified_by": "Administrator",
  "module": "MTRH Dev",
  "name": "Tender Quotation Evaluation",

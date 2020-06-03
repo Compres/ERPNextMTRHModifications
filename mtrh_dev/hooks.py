@@ -52,9 +52,20 @@ app_include_js = ["/assets/mtrh_dev/js/utilities.js"]
 
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
+fixtures =["Custom Script","Server Script",{"dt":"Workflow","filters":{"is_active":"1"}}]
+
+website_route_rules = [
+	{"from_route": "/deliverynumber", "to_route": "Purchase Receipt"},
+	{"from_route": "/deliverynumber/<path:name>", "to_route": "deliverynumber",
+		"defaults": {
+			"doctype": "Purchase Receipt",
+			"parents": [{"label": _("Purchase Receipt"), "route": "deliverynumber"}]
+		}
+	}
+]
 
 standard_portal_menu_items = [	
-	{"title": _("Supplier Delivery Note"), "route": "/Supplier-Delivery-Note/Supplier-Delivery-Note", "role": "Supplier"}	
+	{"title": _("Delivery Number"), "route": "/deliverynumber", "reference_doctype": "Purchase Receipt", "role": "Supplier"}	
 ]
 
 # Installation
@@ -112,18 +123,27 @@ doc_events = {
 	},
 	"Request for Quotation":{
 		"before_save":"mtrh_dev.mtrh_dev.workflow_custom_action.update_material_request_item_status",		
-		"on_submit":["erpnext.buying.doctype.request_for_quotation.request_for_quotation.send_supplier_emails","mtrh_dev.mtrh_dev.tqe_evaluation.send_adhoc_members_emails"]
+		"on_submit":["mtrh_dev.mtrh_dev.tqe_evaluation.send_rfq_supplier_emails","mtrh_dev.mtrh_dev.tqe_evaluation.send_adhoc_members_emails"]
 				
 	},
 	"Tender Quotation Award":{
 		"before_submit":"mtrh_dev.mtrh_dev.doctype.tender_quotation_award.tender_quotation_award.update_price_list"
+	},
+	"Purchase Receipt":{
+		"before_save":"mtrh_dev.mtrh_dev.utilities.process_workflow_log"
+	},
+	"Quality Inspection":{
+		"before_submit":"mtrh_dev.mtrh_dev.utilities.process_workflow_log",
+		"on_submit":"mtrh_dev.mtrh_dev.purchase_receipt_utils.update_percentage_inspected"
 	}
+	#"Purchase Receipt":{
+		#"on_submit":"mtrh_dev.mtrh_dev.tqe_evaluation.Onsubmit_Of_Purchase_Receipt"
+	#}
  }
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
 # 	"all": [
 # 		"mtrh_dev.tasks.all"
 # 	],
@@ -139,17 +159,20 @@ doc_events = {
 # 	"monthly": [
 # 		"mtrh_dev.tasks.monthly"
 # 	]
-# }
+#}
 
 scheduler_events = {
     "cron": {
-        "* * * * *": [
-            "frappe.email.queue.flush",
+       "* * * * *": [
+          "frappe.email.queue.flush",
 			"frappe.email.doctype.email_account.email_account.pull"
+       ],
+		#SEND SUPPLIER "INVOICE US"
+		 "* * * * *": [
+            "mtrh_dev.mtrh_dev.purchase_receipt_utils.delivery_completed_status"
         ]
     }
 }
-
 # Testing
 # -------
 

@@ -11,6 +11,7 @@ from mtrh_dev.mtrh_dev.tqe_on_submit_operations import raise_po_based_on_direct_
 from frappe.model.workflow import get_workflow_name, get_workflow_state_field
 
 from erpnext.accounts.utils import get_fiscal_year
+from datetime import date, datetime
 
 @frappe.whitelist()
 def attach_file_to_doc(filedata, doc_type, doc_name, file_name):
@@ -144,6 +145,53 @@ def process_workflow_log(doc, state):
 	#frappe.msgprint("Logging: " + state)
 	log_actions(doc, the_decision)
 
+	#================Generation of Quality Inspection========================
+	if doc.get('doctype')=="Purchase Receipt" and state == "before_save" and get_doc_workflow_state(doc) =="Pending Inspection":
+		#function to insert into Quality Inspection
+		#frappe.msgprint("Logging: " + get_doc_workflow_state(doc))
+		create_quality_inspection(doc)
+
+def create_quality_inspection(doc):
+	#frappe.throw(doc.name)
+	docname=doc.name	
+	itemlist = frappe.db.get_list("Purchase Receipt Item",
+		filters={
+				"parent":docname,				
+			},
+			fields=["item_code","item_name","qty","amount"],
+			ignore_permissions = True,
+			as_list=False
+		)
+	for item in itemlist:		
+		itemcode=item.get("item_code")	
+		itemname=item.get("item_name")		
+		qty=item.get("qty")		
+		amount= item.get("amount")		
+	template_name= frappe.db.get_value('Item', item.get("item_code"), 'quality_inspection_template')	
+	today = str(date.today())
+	user=frappe.session.user
+	doc_type = doc.get('doctype')
+	#frappe.throw(doc_type)	
+	docc = frappe.new_doc('Quality Inspection')
+	docc.update(
+				{	
+					"naming_series":"MAT-QA-.YYYY.-",
+					"report_date":today,	
+					"inspection_type":"Incoming",
+					"sample_size":qty,
+					"status":"Accepted",
+					"inspected_by":user,
+					"item_code":itemcode,
+					"item_name":itemname,
+					"reference_type":doc_type,
+					"reference_name":docname,
+					"quality_inspection_template":template_name,				
+																			
+				}
+			)
+	docc.insert(ignore_permissions = True)
+	
+
 def log_actions(doc, action_taken):
 	logged_in_user = frappe.session.user
 	child = frappe.new_doc("Approval Log")
@@ -151,6 +199,9 @@ def log_actions(doc, action_taken):
 
 	if "Employee" not in frappe.get_roles(frappe.session.user):
 		action_user ="System Generated"
+	action_user_signature = None
+	if frappe.db.exists("Signatures", logged_in_user):
+		action_user_signature = frappe.get_cached_value("Signatures", logged_in_user, "signature")
 	child.update({
 		"doctype": "Approval Log",
 		"parenttype": doc.get('doctype'),
@@ -159,6 +210,7 @@ def log_actions(doc, action_taken):
 		"action_time": frappe.utils.data.now_datetime(),
 		"decision": action_taken,
 		"action_user": action_user,
+		"signature": action_user_signature,
 		"idx": len(doc.action_log) + 1
 	})
 	doc.action_log.append(child)
@@ -309,7 +361,7 @@ def validate_budget(doc, state):
 		#commitments = total_commitments[0].total_amount 
 		sql_department_expense_amount = _("""SELECT SUM(amount) as total_amount from `tabPurchase Order Item` WHERE department = '{0}' AND expense_account = '{1}' AND creation >= '{2}' AND creation < '{3}' AND  docstatus = 1""").format(department, expense_account, fiscal_year_starts, fiscal_year_ends)
 		#frappe.msgprint(sql_department_expense_amount)
-		total_commitments = frappe.db.sql(sql_department_expense_amount);
+		total_commitments = frappe.db.sql(sql_department_expense_amount)
 		if total_commitments and total_commitments[0][0]:
 			commitments = total_commitments[0][0]
 		if commitments is None:

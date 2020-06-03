@@ -15,6 +15,7 @@ from frappe.model.document import Document
 import datetime
 from frappe.utils import cint, flt, cstr, now
 from datetime import date, datetime
+from erpnext.buying.doctype.request_for_quotation.request_for_quotation import send_supplier_emails
 
 class TQE(Document):
 	pass
@@ -50,31 +51,12 @@ def send_email_to_adhoc(users_data,rfqno):
 		#email_args.update(common_args)
 		enqueue(method=frappe.sendmail, queue='short', **email_args)
 @frappe.whitelist()
-def Generate_Purchase_Receipt_Draft(doc):
+def Generate_Purchase_Receipt_Draft(doc, deliverynumber):
 	doc1 = json.loads(doc)
 	purchase_order_name = doc1.get('name')
 	items = doc1.get('items')	
-	supplier_name= frappe.db.get_value('Purchase Order', purchase_order_name, 'supplier')	
-	#frappe.msgprint(balance_to_supply)
+	supplier_name= frappe.db.get_value('Purchase Order', purchase_order_name, 'supplier')
 	#frappe.throw(items)
-	
-	"""
-	itemqtylist = frappe.db.get_list("Purchase Order Item",
-			filters={
-				"parent": purchase_order_name,				
-			},
-			fields=["qty"],
-			ignore_permissions = True,
-			as_list=False
-			)
-	#frappe.throw(itemqtylist)			
-	for totalqty in itemqtylist:		
-		itemq =totalqty.qty
-	frappe.msgprint("Item set as attended to: "+str(itemq))		
-	if(itemq<40):
-		#frappe.msgprint("Item set as attended to: "+itemq)			
-	frappe.throw(totalqty.qty)	
-	"""	
 	itemlistarray=[]
 	row={}
 	items_payload = json.dumps(items)
@@ -84,7 +66,8 @@ def Generate_Purchase_Receipt_Draft(doc):
 		row["item_code"]=item.get("item_code")	
 		row["item_name"]=item.get("item_name")		
 		row["description"]=item.get("item_name")		
-		row["qty"]=item.get("tosupply")		
+		row["received_qty"]=item.get("tosupply")
+		row["qty"]="0"
 		row["conversion_factor"]=1
 		row["schedule_date"]= today 
 		row["rate"] = item.get("rate")		
@@ -99,20 +82,19 @@ def Generate_Purchase_Receipt_Draft(doc):
 		row["department"] = item.get("department")
 		row["expense_account"] = item.get("expense_account")
 		row["material_request"] = item.get("material_request")
-		row["rejected_warehouse"] = item.get("warehouse")
-
+		row["rejected_warehouse"] = item.get("warehouse")	
+		itemlistarray.append(row)
 		
-		#delivery_note = item.get("deliverynote")					
-		itemlistarray.append(row)			
 	
-	for item_in in itemlistarray:				
+	for item_in in itemlistarray:						
 		balance_to_supply=getquantitybalance(purchase_order_name,item_in.get("item_code"))
-		itemqtysupplied=int(item_in.get("qty"))
-		balance_qty=int(balance_to_supply)
-		#frappe.throw(balance_qty)
-		#frappe.msgprint(str(item_in.get("qty")))
+		#frappe.msgprint("we are here"+str(balance_to_supply))
+		itemqtysupplied=item.get("received_qty")
+		balance_qty=balance_to_supply
+		#frappe.throw(itemqtysupplied)
+		#frappe.msgprint(str(balance_to_supply))
 		if itemqtysupplied>balance_qty:
-			frappe.throw("You have Exceeded the quantity required to Supply.Kindly Check")
+			frappe.throw("You have Exceeded the quantity required to Supply.Your balance is::::"+str(balance_to_supply))
 		else:
 			#frappe.msgprint("wedddddddddd")
 			#frappe.throw(balance_to_supply)
@@ -126,15 +108,15 @@ def Generate_Purchase_Receipt_Draft(doc):
 						"posting_date":date.today(),
 						"posting_time":datetime.now(),
 						"company":frappe.defaults.get_user_default("company"),		
-						"supplier_delivery_note":908754,
+						"supplier_delivery_note":deliverynumber,
 						"currency":frappe.defaults.get_user_default("currency"),
 						"conversion_rate":"1",
 						"items":itemlistarray														
 					}
 			)
-			doc.insert(ignore_permissions = True)
-			frappe.response['type'] = 'redirect'	
-			frappe.response.location = '/Supplier-Delivery-Note/Supplier-Delivery-Note/'
+			doc.insert(ignore_permissions = True)	
+	#frappe.response['type'] = 'redirect'	
+	#frappe.response.location = '/deliverynumber/'
 
 		
 @frappe.whitelist()
@@ -186,11 +168,63 @@ def send_notifications(adhoc_list, message,subject,doctype,docname):
 				"reference_name": docname,
 				}	
 	enqueue(method=frappe.sendmail, queue='short', timeout=300, **email_args)
-
+@frappe.whitelist()
 def getquantitybalance(purchase_order_name,itemcode):
-	total_qty=frappe.db.sql("""SELECT coalesce(sum(qty),0) FROM `tabPurchase Order Item` WHERE parent=%s and item_code=%s""",(purchase_order_name,itemcode))
-	total_amount_supplied=frappe.db.sql("""SELECT coalesce(sum(qty),0) FROM `tabPurchase Receipt Item` where purchase_order=%s and item_code=%s""",(purchase_order_name,itemcode))
-	quantity_balance = (total_qty [0][0])-(total_amount_supplied[0][0])	
-	#return flt(total_qty[0][0]) if total_qty else 0.
-	#return total_amount_supplied if total_amount_supplied else 0
+	total_qty=frappe.db.sql("""SELECT coalesce(sum(qty),0) FROM `tabPurchase Order Item` WHERE parent=%s""",(purchase_order_name))
+	total_amount_supplied=frappe.db.sql("""SELECT coalesce(sum(qty),0) FROM `tabPurchase Receipt Item` where purchase_order=%s and item_code=%s and docstatus !=2""",(purchase_order_name,itemcode))
+	total_amount_inspected=frappe.db.sql("""SELECT coalesce(sum(sample_size),0) FROM `tabQuality Inspection` where reference_name in (select parent from `tabPurchase Receipt Item` where purchase_order=%s and item_code=%s) and docstatus='1'""",(purchase_order_name,itemcode))
+	total_amount_inspected_rejected=frappe.db.sql("""SELECT coalesce(sum(sample_size),0) FROM `tabQuality Inspection` where  status LIKE %s and  reference_name in (select parent from `tabPurchase Receipt Item` where purchase_order=%s and item_code=%s) """,('%Rejected%',purchase_order_name,itemcode))
+	
+	quantity_balance = (total_qty [0][0])-(total_amount_supplied[0][0])
+	bal_in_inspection=(total_amount_inspected[0][0])-(total_amount_inspected_rejected[0][0])
+	total_bal = (quantity_balance)-(bal_in_inspection)
+	#-(total_amount_inspected[0][0])))	
+	#balance_amount=(total_amount_supplied[0][0])-((total_amount_supplied[0][0])-(total_amount_inspected[0][0]))
+	#bal_amnt = (quantity_balance[0][0])-(balance_amount[0][0])
+	#return total_qty[0][0] if total_qty[0][0] else 0.
+	#return total_amount_inspected if total_amount_inspected else 0
 	return quantity_balance if quantity_balance else 0
+
+def Onsubmit_Of_Purchase_Receipt(doc, state):
+	docname = doc.name
+	itemdetails = frappe.db.get_list("Purchase Receipt Item",
+			filters={
+				"parent": docname,				
+			},
+			fields=["item_code","item_name","amount"],
+			ignore_permissions = True,
+			as_list=False
+		)	
+	
+	for specificitem in itemdetails:
+		itemcode=specificitem.get("item_code")
+		itemname=specificitem.get("item_name")
+		amount=specificitem.get("amount")
+		itemtemplate = frappe.db.get_list("Item",
+			filters={
+				"name":itemcode,				
+			},
+			fields=["quality_inspection_template"],
+			ignore_permissions = True,
+			as_list=False
+		)
+		for template in itemtemplate:
+			template_name=template.get("quality_inspection_template")	
+	frappe.throw(template_name)	
+	doc = frappe.new_doc('Quality Inspection')
+	doc.update(
+				{	
+					"naming_series":"MAT-QA-.YYYY.-",
+					"report_date":date.today(),	
+					"inspection_type":"Incoming",
+					"status":"Accepted",
+					"item_code":"",
+					"item_name":"",
+					"quality_inspection_template":"",						
+					"readings":itemlistarray														
+				}
+			)
+	doc.insert(ignore_permissions = True)
+def send_rfq_supplier_emails(doc, state):
+	rfq = doc.get("name")
+	send_supplier_emails(rfq)
