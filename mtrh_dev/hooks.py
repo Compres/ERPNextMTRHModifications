@@ -52,8 +52,21 @@ app_include_js = ["/assets/mtrh_dev/js/utilities.js"]
 
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
-fixtures =["Custom Script","Server Script",{"dt":"Workflow","filters":{"is_active":"1"}}]
+#fixtures =["Custom Script","Server Script",'Workflow State','Workflow Action Master',"Role", "Role Profile", {"dt":"Workflow","filters":{"is_active":"1"}},
+#			"UOM","Item Group","Supplier"]
+#,"Tender Number","Tender Quotation Award",{"dt":"Item","filters":{"creation":[">","2020-05-26"],"disabled":"0"}}
+#fixtures =["Email Account"]
+website_route_rules = [
+	{"from_route": "/grns", "to_route": "Purchase Receipt"},
+	{"from_route": "/grns/<path:name>", "to_route": "grn",
+		"defaults": {
+			"doctype": "Purchase Receipt",
+			"parents": [{"label": _("Goods Received Note"), "route": "grns"}]
+		}
+	}
+]
 
+"""
 website_route_rules = [
 	{"from_route": "/deliverynumber", "to_route": "Purchase Receipt"},
 	{"from_route": "/deliverynumber/<path:name>", "to_route": "deliverynumber",
@@ -61,13 +74,28 @@ website_route_rules = [
 			"doctype": "Purchase Receipt",
 			"parents": [{"label": _("Purchase Receipt"), "route": "deliverynumber"}]
 		}
+	},
+	{"from_route": "/deliverynote", "to_route": "Purchase Receipt"},
+	{"from_route": "/deliverynote/<path:name>", "to_route": "deliverynote",
+		"defaults": {
+			"doctype": "Purchase Receipt",
+			"parents": [{"label": _("Purchase Receipt"), "route": "deliverynote"}]
+		}
 	}
 ]
-
+"""
 standard_portal_menu_items = [	
-	{"title": _("Delivery Number"), "route": "/deliverynumber", "reference_doctype": "Purchase Receipt", "role": "Supplier"}	
+	{"title": _("Goods Received Note"), "route": "/grns", "reference_doctype": "Purchase Receipt", "role": "Supplier"}
 ]
 
+"""
+has_website_permission = {
+	"Purchase Receipt": "erpnext.controllers.website_list_for_contact.has_website_permission"
+	
+}
+"""
+
+default_mail_footer = """MTRH Enterprise System"""
 # Installation
 # ------------
 
@@ -168,9 +196,12 @@ scheduler_events = {
 			"frappe.email.doctype.email_account.email_account.pull"
        ],
 		#SEND SUPPLIER "INVOICE US"
-		 "* * * * *": [
-            "mtrh_dev.mtrh_dev.purchase_receipt_utils.delivery_completed_status"
-        ]
+		"* * * * *": [
+			"mtrh_dev.mtrh_dev.purchase_receipt_utils.delivery_completed_status"
+        ],
+		"hourly": [
+			"frappe.integrations.doctype.google_drive.google_drive.daily_backup"
+		]
     }
 }
 # Testing

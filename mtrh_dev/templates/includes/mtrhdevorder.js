@@ -5,6 +5,7 @@ window.doc={{ doc.as_json() }};
 
 $(document).ready(function() {
 	new order();
+	console.log("Purchase order {{doc.name}} ")
 	window.doc_info = {
 		customer: '{{doc.customer}}',
 		doctype: '{{ doc.doctype }}',

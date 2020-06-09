@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "L.###########",
  "creation": "2020-05-11 13:15:22.779299",
  "doctype": "DocType",
@@ -16,7 +17,9 @@
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "label": "Action Time",
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "columns": 3,
@@ -24,7 +27,9 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Decision",
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "columns": 2,
@@ -32,7 +37,9 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Action User",
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "columns": 2,
@@ -41,11 +48,15 @@
    "in_list_view": 1,
    "label": "Signature",
    "no_copy": 1,
-   "read_only": 1
+   "print_width": "30",
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   }
  ],
  "istable": 1,
- "modified": "2020-06-01 23:18:43.478294",
+ "links": [],
+ "modified": "2020-06-07 18:35:00.386933",
  "modified_by": "Administrator",
  "module": "MTRH Dev",
  "name": "Approval Log",

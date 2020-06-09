@@ -14,9 +14,11 @@ from frappe import _
 from frappe.model.workflow import apply_workflow, get_workflow_name, \
 	has_approval_access, get_workflow_state_field, send_email_alert, get_workflow_field_value
 from frappe.desk.notifications import clear_doctype_notifications
+from frappe.model.mapper import get_mapped_doc
 from frappe.utils.user import get_users_with_role
 import datetime
 from datetime import date
+from erpnext.stock.get_item_details import get_serial_no
 class WorkFlowCustomAction(Document):
 	pass
 #https://discuss.erpnext.com/t/popup-message-using-frappe-publish-realtime/37286/2
@@ -89,98 +91,163 @@ def update_material_request_item_status(doc, state):
 		frappe.db.set_value('Material Request', material_request, 'per_attended', float(per_attended_to))
 		
 def auto_generate_purchase_order_by_material_request(doc,state):	
-	material_request_document = doc
+	#ONLY IF THE TYPE OF MATERIAL REQUEST IS OF PURCHASE TYPE.
 	material_request_number  = doc.name
-	items = doc.items
-	#We want to get the list of awarded items
-	awarded_item_list = []
-	for item in items:
-		unawarded = frappe.db.exists({
-				"doctype":"Item Default",
-				"parent": item.item_code,
-				"default_supplier": "" 
-			})
-		#Apparently you cannot use an array of arguments such as default_supplier:["!=",""]in this frappe.db.exists 
-		# #so I had to reverse the exclusion criteria to determin if item is unawarded, 
-		# #if not, then it (obviously) is awarded
-		# mind = blown :)
-		if not unawarded:
-			awarded_item_list.append(item.item_code)
-	#If we have no empty array of awarded items 
-	if awarded_item_list:
-		#Let us now get suppliers who can supply these items and make respective orders for each
-		supplier_list = frappe.get_list('Item Default',
-										filters={
-											'parent': ["IN", awarded_item_list]
-										},
-										fields=['default_supplier'],
-										order_by='creation desc',
-										as_list=False
-									)
-		for supplier in supplier_list:
-			#Work begins here, but first let us know what items out of our awarded they can supply
-			supplier_items = frappe.get_list('Item Default',
-										filters={
-											'parent': ["IN", awarded_item_list],
-											'default_supplier': supplier.default_supplier
-										},
-										fields=['parent'],
-										order_by='creation desc',
-										as_list=False
-									)
-			#We have the supplier, now let us begin creating our document.
-			actual_name = supplier.default_supplier
-			purchase_order_items =[]
-			row ={}
-			# Creating rows of JSON objects representing a typical Purchase Order Item row  we need to add to the items array
-			for supplier_item in supplier_items:
-				item = supplier_item.parent
-				row["item_code"]=supplier_item.parent
-				item_dict = frappe.db.get_value('Material Request Item', {"parent":material_request_number,"item_code":supplier_item.parent}, ["item_code",  "item_name",  "description",  "item_group","brand","qty","uom", "conversion_factor", "stock_uom", "warehouse", "schedule_date", "expense_account","department"], as_dict=1)
-				qty = item_dict.qty
-				default_pricelist = frappe.db.get_value('Item Default', {'parent': item}, 'default_price_list')
-				rate = frappe.db.get_value('Item Price',  {'item_code': item,'price_list': default_pricelist}, 'price_list_rate')
-				amount = float(qty) * float(rate)
-				row["item_name"]=item_dict.item_name
-				row["description"]=item_dict.item_name
-				row["rate"] = rate
-				row["warehouse"] = item_dict.warehouse
-				row["schedule_date"] = item_dict.schedule_date
-				#Rate we have to get the current rate
-				row["qty"]= item_dict.qty
-				row["stock_uom"]=item_dict.stock_uom
-				row["uom"] =item_dict.stock_uom
-				row["brand"]=item_dict.brand
-				row["conversion_factor"]=item_dict.conversion_factor #To be revised: what if a supplier packaging changes from what we have?
-				row["material_request"] = material_request_number
-				row["amount"] = amount #calculated
-				row["net_amount"]=amount
-				row["base_rate"] = rate 
-				row["base_amount"] = amount
-				row["expense_account"] = item_dict.expense_account
-				row["department"] = item_dict.department
-				#Let's add this row to the items array
-				purchase_order_items.append(row)
-			#exit loop when your'e done, execute the order below and start all over for the next supplier
+	if doc.get("material_request_type") == "Purchase":
+		material_request_document = doc
+		
+		items = doc.items
+		#We want to get the list of awarded items
+		awarded_item_list = []
+		for item in items:
+			unawarded = frappe.db.exists({
+					"doctype":"Item Default",
+					"parent": item.item_code,
+					"default_supplier": "" 
+				})
+			#Apparently you cannot use an array of arguments such as default_supplier:["!=",""]in this frappe.db.exists 
+			# #so I had to reverse the exclusion criteria to determin if item is unawarded, 
+			# #if not, then it (obviously) is awarded
+			# mind = blown :)
+			if not unawarded:
+				awarded_item_list.append(item.item_code)
+		#If we have no empty array of awarded items 
+		if awarded_item_list:
+			#Let us now get suppliers who can supply these items and make respective orders for each
+			supplier_list = frappe.get_list('Item Default',
+											filters={
+												'parent': ["IN", awarded_item_list]
+											},
+											fields=['default_supplier'],
+											order_by='creation desc',
+											as_list=False
+										)
+			for supplier in supplier_list:
+				#Work begins here, but first let us know what items out of our awarded they can supply
+				supplier_items = frappe.get_list('Item Default',
+											filters={
+												'parent': ["IN", awarded_item_list],
+												'default_supplier': supplier.default_supplier
+											},
+											fields=['parent'],
+											order_by='creation desc',
+											as_list=False
+										)
+				#We have the supplier, now let us begin creating our document.
+				actual_name = supplier.default_supplier
+				purchase_order_items =[]
+				row ={}
+				# Creating rows of JSON objects representing a typical Purchase Order Item row  we need to add to the items array
+				for supplier_item in supplier_items:
+					item = supplier_item.parent
+					row["item_code"]=supplier_item.parent
+					item_dict = frappe.db.get_value('Material Request Item', {"parent":material_request_number,"item_code":supplier_item.parent}, ["item_code",  "item_name",  "description",  "item_group","brand","qty","uom", "conversion_factor", "stock_uom", "warehouse", "schedule_date", "expense_account","department"], as_dict=1)
+					qty = item_dict.qty
+					default_pricelist = frappe.db.get_value('Item Default', {'parent': item}, 'default_price_list')
+					rate = frappe.db.get_value('Item Price',  {'item_code': item,'price_list': default_pricelist}, 'price_list_rate')
+					amount = float(qty) * float(rate)
+					row["item_name"]=item_dict.item_name
+					row["description"]=item_dict.item_name
+					row["rate"] = rate
+					row["warehouse"] = item_dict.warehouse
+					row["schedule_date"] = item_dict.schedule_date
+					#Rate we have to get the current rate
+					row["qty"]= item_dict.qty
+					row["stock_uom"]=item_dict.stock_uom
+					row["uom"] =item_dict.stock_uom
+					row["brand"]=item_dict.brand
+					row["conversion_factor"]=item_dict.conversion_factor #To be revised: what if a supplier packaging changes from what we have?
+					row["material_request"] = material_request_number
+					row["amount"] = amount #calculated
+					row["net_amount"]=amount
+					row["base_rate"] = rate 
+					row["base_amount"] = amount
+					row["expense_account"] = item_dict.expense_account
+					row["department"] = item_dict.department
+					#Let's add this row to the items array
+					purchase_order_items.append(row)
+				#exit loop when your'e done, execute the order below and start all over for the next supplier
+				doc = frappe.new_doc('Purchase Order')
+				doc.update(
+					{
+						"supplier_name":actual_name,
+						"conversion_rate":1,
+						"currency":frappe.defaults.get_user_default("currency"),
+						"supplier": actual_name,
+						"supplier_test":actual_name,
+						"company": frappe.defaults.get_user_default("company"),
+						"naming_series": "PUR-ORD-.YYYY.-",
+						"transaction_date" : date.today(),
+						"items":purchase_order_items
+					}
+				)
+				doc.insert()
+			#Mark these items unattended finally
+	
+			#update_material_request_item_status(material_request_document, "state")
+			#============================================================================
+			#MATERIAL REQUEST FOR ISSUE AND TRANSFERS
+	elif doc.get("material_request_type") in ["Material Issue","Material Transfer"]:
+		if doc.get("material_request_type") == "Material Transfer":
+			to_warehouse = doc.get("set_warehouse")
+			from_warehouse = doc.get("set_from_warehouse")
+		else:
+			to_warehouse = None
+			from_warehouse = doc.get("set_warehouse")
+		stock_entry_items  = doc.get("items")
+		stock_entry_doc = frappe.new_doc('Stock Entry')
+		updated_dict =[]
+		updated_json={}
+		for item in stock_entry_items:
+			updated_json["item_code"]=item.get("item_code")
+			updated_json["item_name"]=item.get("item_name")
+			updated_json["department"]=item.get("deparment")
+			updated_json["qty"]=item.get("qty")
+			updated_json["material_request_qty"]=item.get("qty")
+			updated_json["t_warehouse"]=to_warehouse
+			updated_json["s_warehouse"]=from_warehouse
+			transfer_qty = item.get("qty") * item.get("conversion_factor")
+			updated_json["transfer_qty"]= transfer_qty
+			updated_json["material_request"]= material_request_number
+			updated_json["material_request_item"]=item.get("name")
+			updated_json["basic_rate"]= item.get("rate")
+			updated_json["valuation_rate"]=item.get("rate")
+			updated_json["basic_amount"]=item.get("rate")*item.get("qty")
+			updated_json["amount"]= item.get("rate")*item.get("qty")
+			updated_json["allow_zero_valuation"]= "0"
+			#material_request_item
+			args = {
+				'item_code'	: item.get("item_code"),
+				'warehouse'	: from_warehouse,
+				'stock_qty'	: transfer_qty
+			}
+			payload= frappe._dict(args)
+			serial_no =  get_serial_no(payload) #if  get_serial_no(payload).get("message") else ""
+			if serial_no:
+				serial_no = get_serial_no(payload).message
+			else:
+				serial_no = ""
+			updated_json["serial_no"]=serial_no
+			#item["t_warehouse"] = to_warehouse
+			#item["s_warehouse"] = from_warehouse
+			updated_dict.append(updated_json)
+		stock_entry_doc.update(
+			{
+				"naming_series": "MAT-STE-.YYYY.-",
+				"stock_entry_type":doc.get("material_request_type"),			
+				"company": frappe.defaults.get_user_default("company"),	
+				"from_warehouse":from_warehouse,
+				"to_warehouse":	to_warehouse,	
+				"items": updated_dict
+			}
+		)
+		stock_entry_doc.insert(ignore_permissions=True)
+		
+		#frappe.msgprint(doclist)
+		
 
+		
 
-			doc = frappe.new_doc('Purchase Order')
-			doc.update(
-				{
-					"supplier_name":actual_name,
-					"conversion_rate":1,
-					"currency":frappe.defaults.get_user_default("currency"),
-					"supplier": actual_name,
-					"supplier_test":actual_name,
-					"company": frappe.defaults.get_user_default("company"),
-					"naming_series": "PUR-ORD-.YYYY.-",
-					"transaction_date" : date.today(),
-					"items":purchase_order_items
-				}
-			)
-			doc.insert()
-		#Mark these items unattended finally
-		#update_material_request_item_status(material_request_document, "state")
 @frappe.whitelist()
 def procurement_method_on_select(material_request, supplier_name):
 	#VALIDATE THIS MATERIAL REQUEST FIRST
