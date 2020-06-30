@@ -92,7 +92,7 @@ rfq = Class.extend({
 
 	submit_rfq: function(){
 		$('.btn-sm').click(function(){
-			var isconfirmed = confirm("Ensure you have entered all details accurately. Submission is permanent. Are you sure?");
+			var isconfirmed = confirm("Are you sure you have entered all details accurately.?");
 			if(isconfirmed){
 				frappe.freeze();
 				frappe.call({

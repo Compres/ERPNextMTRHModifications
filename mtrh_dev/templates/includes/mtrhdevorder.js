@@ -7,7 +7,7 @@ $(document).ready(function() {
 	new order();
 	console.log("Purchase order {{doc.name}} ")
 	window.doc_info = {
-		customer: '{{doc.customer}}',
+		//customer: '{{doc.customer}}',
 		doctype: '{{ doc.doctype }}',
 		doctype_name: '{{ doc.name }}',
 		grand_total: '{{ doc.grand_total }}',
@@ -24,9 +24,11 @@ order = Class.extend({
 		this.change_quantity_amount();
 		this.terms();
 		this.generatedeliverynote();
+		this.generatepurchaseinvoice();
 		this.navigate_quotations();
 		this.change_attachments();
 		this.Check_Balance_Remaining();
+		this.change_attachments_two();
 		
 	},
 
@@ -57,6 +59,20 @@ order = Class.extend({
 			})
 		})
 	},
+	change_attachments_two: function(){
+		var me = this;
+		
+		$('.order-items').on("change", ".invoice-attachments", function(){
+			me.attachments = $(this).val();
+			console.log("The documents atteched are: " + me.attachments);
+			
+			$.each(doc.items, function(idx, data){
+				if(data.idx == me.idx){
+					data.attachments = me.attachments;
+				}
+			})
+		})
+	},
 	
 
 	change_qty: function(){
@@ -70,7 +86,6 @@ order = Class.extend({
 			me.attachments = $(this).data("attachments");
 		})
 	},
-
 	
 	change_rate: function(){
 		var me = this;
@@ -88,6 +103,7 @@ order = Class.extend({
 			me.idx = parseFloat($(this).attr('data-idx'));	
 			//alert(me.idx)		
 			me.tosupply = parseFloat($(this).val()) || 0;
+			//alert("3: " + me.tosupply);
 			me.itemcode = parseFloat($(repl('.order-it[data-idx=%(idx)s]',{'idx': me.idx})).val());
 			me.qty = parseFloat($(repl('.order-qty[data-idx=%(idx)s]',{'idx': me.idx})).val());
 			me.rate = parseFloat($(repl('.orderrate[data-idx=%(idx)s]',{'idx': me.idx})).val());
@@ -139,6 +155,7 @@ order = Class.extend({
 			if(data.idx == me.idx){				
 				data.qty = me.qty;
 				data.tosupply=me.tosupply;
+				//alert("2: " + data.tosupply);
 				data.rate = me.rate;
 				//data.dnote= me.dnote;
 				//alert(data.rate)
@@ -163,7 +180,7 @@ order = Class.extend({
 				data.qty = me.qty;
 				data.tosupply=me.tosupply;
 				data.rate = me.rate;				
-				//alert(data.rate)
+				//alert("1: " + data.tosupply);
 				data.amount = (me.rate * me.tosupply) || 0.0;
 				//alert(data.amount)
 				$(repl('.order-amount[data-idx=%(idx)s]',{'idx': me.idx})).text(format_number(data.amount, doc.number_format, 2));
@@ -184,7 +201,7 @@ order = Class.extend({
 			var deliverynumber =document.getElementById("deliverynumber").value;
 			if(deliverynumber.length==0)
 			{
-				frappe.throw("Delivery Number Field Empty!!.Kindly Check")
+				frappe.throw("Delivery Number Field Empty!!")
 			}
 			
 			
@@ -199,14 +216,56 @@ order = Class.extend({
 					},
 					btn: this,
 					callback: function(r){
-						alert("You will be redirected to  check on your list of delivery note numbers")
+						//alert("Submitted Successfully");
+						//location.reload(true);
 						//frappe.unfreeze();
 						//if(r.message){
 							//$('.btn-sm').hide()
-							window.location.href = "/deliverynumber/"// + encodeURIComponent(r.message);
+						//	window.location.href = "/deliverynumber/"// + encodeURIComponent(r.message);
 							//window.location.replace("/Supplier-Delivery-Note/Supplier-Delivery-Note/"// + encodeURIComponent(r.message));
 							//frappe.show_alert("Your submission has been successfull", 10)
 						//}
+					}
+				})
+			}
+		})
+	},
+
+	//
+
+
+
+
+
+
+	///
+
+	generatepurchaseinvoice: function(){
+		
+		$('.btn-invoice').click(function(){					
+			var isconfirmed = confirm("Are you sure you want to generate purchase invoice?");								
+			if(isconfirmed){
+				//frappe.freeze();
+				frappe.call({
+					type: "POST",
+					method: "mtrh_dev.mtrh_dev.tqe_evaluation.make_purchase_invoice_from_portal",
+					args: {						
+						purchase_order_name:doc.name,
+						doc:doc
+											
+					},
+					btn: this,
+					callback: function(r){
+						//alert(r.totalqty);
+						//location.reload(true);
+						//frappe.unfreeze();
+						//if(r.message){
+							//$('.btn-sm').hide()
+							//window.location.href = "/purchase-invoices/"+ encodeURIComponent(doc.name);
+							//window.location.replace("/Supplier-Delivery-Note/Supplier-Delivery-Note/"// + encodeURIComponent(r.message));
+							//frappe.show_alert("Your submission has been successfull", 10)
+						//}
+						
 					}
 				})
 			}
@@ -237,7 +296,7 @@ order = Class.extend({
 						//alert(r.message)
 						if(r.message<=0)
 						{
-							frappe.throw("You have submitted more than required")
+							//frappe.throw("You have submitted more than required")
 
 						}
 						//$(repl('.order-qty[data-idx=%(idx)s]',{'idx': me.idx})).text(r.message);

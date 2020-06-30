@@ -67,7 +67,7 @@ def delivery_completed_status():
 		#CREATE AN ATTACHMENTS ARRAY
 		attachments =[]
 		#GRN DOCUMENT ATTACHMENT
-		grn_attachment = frappe.attach_print("Purchase Receipt", docname, file_name="GRN-"+docname)
+		grn_attachment = frappe.attach_print("Purchase Receipt", docname, file_name=docname)
 		attachments.append(grn_attachment)
 		#INSPECTION ATTACHMENT
 		for item in inspection_documents:

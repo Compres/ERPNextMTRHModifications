@@ -75,11 +75,13 @@
     });
 
     $("#btn_upload").click(function() {
+		//alert("we are here")
 		//var projname = $('#projname').val();
 		var theID = $(this).data("theid");
 		var doc_name = $(this).data("thedocname");
 		//frappe.msgprint(__("This DOC: " + doc_name));
 		var filedata = $('#select_files-' + theID).prop('filedata');
+		//frappe.msgprint(__("This DOC: " + filedata));
 		var timestamp = new Date().getUTCMilliseconds();
 
 		frappe.call({

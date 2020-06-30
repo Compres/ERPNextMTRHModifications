@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 import frappe
 from frappe import msgprint
 from frappe.utils import cint, flt, cstr, now
+import datetime
+from datetime import date, datetime
 from frappe.model.document import Document
 
 class ProcurementPlan(Document):
@@ -43,3 +45,11 @@ def updatesupplier(suppname,itemcode,bidder,itemname,itemprice,user,uom,brand):
        	itempriceinsert=frappe.db.sql("""INSERT INTO  `tabItem Price` (name,creation,modified,modified_by,owner,docstatus,currency,item_description,lead_time_days,buying,selling,
 	item_name,valid_from,brand,price_list,item_code,price_list_rate) values(uuid_short(),now(),now(),%s,%s,'0','KES',%s,'0','1','0',%s,now(),%s,%s,%s,%s)""",(user,user,itemname,itemname,brand,bidder,itemcode,itemprice))
        	setdefaultpricelist =frappe.db.sql("""UPDATE `tabItem Default` set default_price_list=%s where parent=%s""",(bidder,itemcode))
+@frappe.whitelist()
+def Checking_Expired_Partially_Purchase_Order(year_start,year_end,expense_account):
+	#today=date.today() 	 
+	total_amount =frappe.db.sql("""SELECT  coalesce(sum(amount*((a.per_received)/100)),0) FROM `tabPurchase Order Item` b,`tabPurchase Order` a WHERE b.creation BETWEEN %s AND %s AND a.name=b.parent AND a.schedule_date < now()
+	AND b.expense_account= %s AND b.docstatus=1;""",(year_start,year_end,expense_account))
+	return total_amount[0][0]
+	
+	

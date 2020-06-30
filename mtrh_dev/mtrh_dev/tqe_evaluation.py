@@ -67,7 +67,9 @@ def Generate_Purchase_Receipt_Draft(doc, deliverynumber):
 		row["item_name"]=item.get("item_name")		
 		row["description"]=item.get("item_name")		
 		row["received_qty"]=item.get("tosupply")
-		row["qty"]="0"
+		row["qty"] = item.get("tosupply")
+		row["stock_qty"] = item.get("tosupply")
+		row["sample_quantity"] = item.get("tosupply")
 		row["conversion_factor"]=1
 		row["schedule_date"]= today 
 		row["rate"] = item.get("rate")		
@@ -87,14 +89,14 @@ def Generate_Purchase_Receipt_Draft(doc, deliverynumber):
 		
 	
 	for item_in in itemlistarray:						
-		balance_to_supply=getquantitybalance(purchase_order_name,item_in.get("item_code"))
+		balance_to_supply = getquantitybalance(purchase_order_name,item_in.get("item_code"))
 		#frappe.msgprint("we are here"+str(balance_to_supply))
-		itemqtysupplied=item.get("received_qty")
+		itemqtysupplied = item_in.get("received_qty")
 		balance_qty=balance_to_supply
 		#frappe.throw(itemqtysupplied)
 		#frappe.msgprint(str(balance_to_supply))
-		if itemqtysupplied>balance_qty:
-			frappe.throw("You have Exceeded the quantity required to Supply.Your balance is::::"+str(balance_to_supply))
+		if itemqtysupplied > balance_qty:
+			frappe.throw("You have exceeded the remaining balance for the item: " + item_in.get("item_code") + " - " + item_in.get("item_name") + " . The remaining balance to be supplied is: "+str(balance_to_supply))
 		else:
 			#frappe.msgprint("wedddddddddd")
 			#frappe.throw(balance_to_supply)
@@ -117,28 +119,177 @@ def Generate_Purchase_Receipt_Draft(doc, deliverynumber):
 			doc.insert(ignore_permissions = True)	
 	#frappe.response['type'] = 'redirect'	
 	#frappe.response.location = '/deliverynumber/'
+def Check_Procurement_Rate_Estimate(doc, state):
+	items = doc.get("procurement_item")
+	row={}
+	procurementitems=[]	
+	for item in items:		
+		row["item_code"]=item.get("item_code")	
+		row["item_name"]=item.get("item_name")	 
+		row["rate"] = item.get("rate")			
+		procurementitems.append(row)
+	for rate in procurementitems:
+		item_rate = rate.get("rate")
+		if item_rate==0: 	
+			frappe.throw("Rate is zero")
 
 		
 @frappe.whitelist()
-def make_purchase_invoice_from_portal(purchase_order_name):		
+def make_purchase_invoice_from_portal(purchase_order_name,doc):	
+	doc1 = json.loads(doc)	
 	#doc = frappe.get_doc('Purchase Order Item', purchase_order_name) 
-	#itemcode=doc.item_codess
+	form_items=doc1.get("items")
 	
-	itemslist = frappe.db.get_list("Purchase Order Item",
+	supplier_name= frappe.db.get_value('Purchase Order', purchase_order_name, 'supplier')
+
+	purchaseorderamount = frappe.db.get_list("Purchase Order Item",
 			filters={
-				"parent": purchase_order_name,				
+				"parent": purchase_order_name,
+				"docstatus": ["=", 1]			
 			},
-			fields=["item_code","item_name","qty"],
+			fields="sum(`tabPurchase Order Item`.qty) as purchaseorder_qty",			
+			ignore_permissions = True,
+			as_list=False
+		)	
+	lpoamount=0	
+	for lpo in purchaseorderamount:
+		lpoamount = lpo.get("purchaseorder_qty")
+	#++++++++get submitted invoice items
+	submittedinvoiceitems = frappe.db.get_list("Purchase Invoice Item",
+			filters={
+			"docstatus": ["!=", 2],		
+			"purchase_order": purchase_order_name
+			},
+			fields="`tabPurchase Invoice Item`.item_code, `tabPurchase Invoice Item`.item_name,sum(`tabPurchase Invoice Item`.qty) as quantity, `tabPurchase Invoice Item`.department,`tabPurchase Invoice Item`.purchase_order,`tabPurchase Invoice Item`.rate",
 			ignore_permissions = True,
 			as_list=False
 		)
-	itemlistarray=[]	
-	for item in itemslist:
-		itemlistarray.append(item.item_code)	
-	frappe.throw(itemslist)
-	frappe.response['type'] = 'redirect'	
-	frappe.response.location = '/Supplier-Delivery-Note/Supplier-Delivery-Note/'	
+	#loop and get the total quanity invoiced
+	totalinvoicequantityamount=0	
+	for item_10 in submittedinvoiceitems:
+		itemcode = item_10.get("item_code")
+		itemname = item_10.get("item_name")
+		totalinvoicequantityamount = item_10.get("quantity")
+		rate = item_10.get("rate")
+		department = item_10.get("department")
+		purchaseorder = item_10.get("purchase_order")		
+	#==========================end of getting total invoiced items
+	#frappe.response['totalqty'] = lpoamount
+	# #=========================getting submitted purchase receipt items	
+	approvedreceiptsnotinvoiced = frappe.db.get_list("Purchase Receipt Item",
+			filters={
+				"purchase_order": purchase_order_name,
+				"docstatus": ["=", 1],
+				"invoiced":["!=", 1]			
+			},
+			fields="`tabPurchase Receipt Item`.name,`tabPurchase Receipt Item`.item_code, `tabPurchase Receipt Item`.item_name,`tabPurchase Receipt Item`.rejected_qty,sum(`tabPurchase Receipt Item`.rejected_qty) as totalrejectedqty,`tabPurchase Receipt Item`.department,`tabPurchase Receipt Item`.purchase_order,`tabPurchase Receipt Item`.rate,`tabPurchase Receipt Item`.received_qty,`tabPurchase Receipt Item`.amount,`tabPurchase Receipt Item`.qty",
+			#fields=["qty","item_code","item_name","rejected_qty","received_qty","rate","amount"]			
+			ignore_permissions = True,
+			as_list=False
+		)
+	#frappe.throw(purchase_order_name)	
+	rejected_qty=0
+	invoiceqty=0
+	purchaseinvoiceitemsarray=[]
+	row={}			
+	for item_30 in approvedreceiptsnotinvoiced:
+		##########create child item array
+		row["item_code"] = item_30.get("item_code")
+		row["item_name"] = item_30.get("item_name")
+		row["rejected_qty"] = item_30.get("rejected_qty")
+		row["rate"] = item_30.get("rate")		
+		row["purchase_order"] = item_30.get("purchase_order")
+		row["amount"] = item_30.get("amount")
+		totalrejectedquantity= item_30.get("totalrejectedqty")		
+		row["qty"] = item_30.get("qty")
+		row["purchase_receipt"] = item_30.get("reference_name")
+		purchaseinvoiceitemsarray.append(row)		
+		#frappe.msgprint(purchaseinvoiceitemsarray)
+		##########End of Chid Item array
+
+		itemcode = item_30.get("item_code")
+		itemname = item_30.get("item_name")
+		rejected_qty = item_30.get("rejected_qty")
+		rate = item_30.get("rate")
+		purchasereceiptname=item_30.get("parent")
+		department = item_30.get("department")
+		purchaseorder = item_30.get("purchase_order")
+		amount = item_30.get("amount")
+		received_qty = item_30.get("received_qty")
+		rejectedqty = item_30.get("rejectedqty")
+		qty = item_30.get("qty")
+		namee = item_30.get("name")		
+		submittedinvoiceitems = frappe.db.get_list("Purchase Invoice Item",
+			filters={
+				"purchase_order": purchase_order_name,
+				"item_code":itemcode			
+			},
+			fields="sum(`tabPurchase Invoice Item`.qty) as qty",						
+			ignore_permissions = True,
+			as_list=False
+		)
+		for item_qty in submittedinvoiceitems:
+			invoiceqty = item_qty.get("qty")
+		#frappe.throw(invoiceqty)
+		#balanceafterrejection = invoiceqty-rejectedqty
+		#invoiceqty= frappe.db.get_value('Purchase Invoice Item', {'purchase_order':purchase_order_name,'item_code': itemcode}, 'qty')		
+		if invoiceqty is None:
+			invoiceqty=0
+		#frappe.throw(invoiceqty)
+		#qty_balance_for_item = qty-totalrejectedquantity	
+		if invoiceqty < qty:#Create a Credit note and create and invoice also
+			###########create invoice
+			#frappe.msgprint("WE ARE HERE")
+			#userr = frappe.session.user
+			doc = frappe.new_doc('Purchase Invoice')
+			doc.update(
+					{	
+						"naming_series":"ACC-PINV-.YYYY.-",
+						"supplier":supplier_name,
+						"purchase_receipt_name":purchasereceiptname,						
+						"posting_date":date.today(),						
+						"posting_time":datetime.now(),
+						"company":frappe.defaults.get_user_default("company"),						
+						"currency":frappe.defaults.get_user_default("currency"),					
+						"items":purchaseinvoiceitemsarray														
+					}
+			)
+			doc.insert(ignore_permissions = True)
+			###########end of creating invoice###start of debit note
+			########start of creating credit note for this item
+			if rejected_qty > 0:				
+				doc2 = frappe.new_doc('Credit Note')
+				doc2.update(
+					{	
+						"naming_series":"MAT-CN-.YYYY.-",
+						"qty":rejected_qty,
+						"purchase_order":purchase_order_name																				
+					}
+				)
+				doc2.insert(ignore_permissions = True)
+			updatepurchasereceiptitem =frappe.db.sql("""UPDATE `tabPurchase Receipt Item` set invoiced=1 where name=%s""",(namee))			
+       		#start of creating a credit note for this item
+			balance_amount = flt(invoiceqty)-flt(qty)	
+			frappe.response['totalqty'] = balance_amount
+			frappe.msgprint("submitted Sucessfully")#insert the approved purchase to create a draft purchase invoice# Create a Credit note if the there is a rejected amount
+		else:
+			frappe.msgprint("You have already Invoiced Enough for this approved item"+itemcode)
+	
+	"""			
+	if totalinvoicequantityamount is None:
+			totalinvoicequantityamount=0
+	if totalinvoicequantityamount < lpoamount:
+		balance_amount = flt(lpoamount)-flt(totalinvoicequantityamount-rejected_qty)
+		frappe.msgprint("You still have balance to submit")
+		frappe.response['totalqty'] = balance_amount
+	else:
+		frappe.msgprint("You have submitted all the Invoices")	
+		"""
+	
+#	frappe.response.location = '/Supplier-Delivery-Note/Supplier-Delivery-Note/'	
 	#frappe.response['delivey']=	deliverynotelist 
+
+
 
 @frappe.whitelist()
 def send_adhoc_members_emails(doc, state):	#method to send emails to adhoc members
@@ -170,7 +321,7 @@ def send_notifications(adhoc_list, message,subject,doctype,docname):
 	enqueue(method=frappe.sendmail, queue='short', timeout=300, **email_args)
 @frappe.whitelist()
 def getquantitybalance(purchase_order_name,itemcode):
-	total_qty=frappe.db.sql("""SELECT coalesce(sum(qty),0) FROM `tabPurchase Order Item` WHERE parent=%s""",(purchase_order_name))
+	total_qty = frappe.db.sql("""SELECT coalesce(sum(qty),0) FROM `tabPurchase Order Item` WHERE parent=%s""",(purchase_order_name))
 	total_amount_supplied=frappe.db.sql("""SELECT coalesce(sum(qty),0) FROM `tabPurchase Receipt Item` where purchase_order=%s and item_code=%s and docstatus !=2""",(purchase_order_name,itemcode))
 	total_amount_inspected=frappe.db.sql("""SELECT coalesce(sum(sample_size),0) FROM `tabQuality Inspection` where reference_name in (select parent from `tabPurchase Receipt Item` where purchase_order=%s and item_code=%s) and docstatus='1'""",(purchase_order_name,itemcode))
 	total_amount_inspected_rejected=frappe.db.sql("""SELECT coalesce(sum(sample_size),0) FROM `tabQuality Inspection` where  status LIKE %s and  reference_name in (select parent from `tabPurchase Receipt Item` where purchase_order=%s and item_code=%s) """,('%Rejected%',purchase_order_name,itemcode))
@@ -228,3 +379,30 @@ def Onsubmit_Of_Purchase_Receipt(doc, state):
 def send_rfq_supplier_emails(doc, state):
 	rfq = doc.get("name")
 	send_supplier_emails(rfq)
+def create_grn_qualityinspectioncert_debitnote_creditnote(doc, state):
+	docname=doc.name
+	purchasereceipt_num = doc.get("reference_name")
+	itemcode = doc.get("item_code")
+	Receivedquantity = doc.get("total_sample_size")
+	Acceptedquantity=doc.get("sample_size")
+	Rejectedquantity=0.0
+	Rejectedquantity=flt(Receivedquantity)-flt(Acceptedquantity)
+	purchasereceiptitemname = frappe.get_value("Purchase Receipt Item", {"item_code": itemcode, "parent":purchasereceipt_num},"name")
+	#purchasereceiptitemname = frappe.db.get_value("Purchase Receipt Item","parent":purchasereceipt_num,"name")
+	#frappe.msgprint(str(Rejectedquantity))	
+	updatepurchasereceiptitem =frappe.db.sql("""UPDATE `tabPurchase Receipt Item` set rejected_qty=%s,qty=%s where parent=%s and item_code=%s""",(Rejectedquantity,Acceptedquantity,purchasereceipt_num,itemcode))
+	if Rejectedquantity > 0:
+		#frappe.msgprint("We are generating debit note now")
+		docc = frappe.new_doc('Debit Note')
+		docc.update({
+			"naming_series":"MAT-DN-.YYYY.-",
+			"quantity":Rejectedquantity,
+			"purchase_receipt_number":purchasereceipt_num			
+		})
+		docc.insert(ignore_permissions = True)
+		updatepurchasereceiptstatus1 =frappe.db.sql("""UPDATE `tabPurchase Receipt` set bill_date=now(),status="To Bill",docstatus=1 where name=%s""",(docname))				
+		updatepurchasereceiptitem =frappe.db.sql("""UPDATE `tabPurchase Receipt Item` set docstatus=1 where name=%s""",(purchasereceiptitemname))
+	else:
+		#frappe.msgprint("We are generating grn")
+		updatepurchasereceiptstatus2 =frappe.db.sql("""UPDATE `tabPurchase Receipt` set bill_date=now(),status="To Bill",docstatus=1 where name=%s""",(docname))
+		updatepurchasereceiptitem2 =frappe.db.sql("""UPDATE `tabPurchase Receipt Item` set docstatus=1 where name=%s""",(purchasereceiptitemname))

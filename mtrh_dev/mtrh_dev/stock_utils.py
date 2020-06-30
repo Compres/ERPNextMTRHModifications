@@ -1,0 +1,120 @@
+# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# License: GNU General Public License v3. See license.txt
+
+# ERPNext - web based ERP (http://erpnext.com)
+# For license information, please see license.txt
+
+from __future__ import unicode_literals
+import frappe, json
+from frappe import _
+from frappe.model.mapper import get_mapped_doc
+from frappe.utils import get_url, cint
+from frappe.utils.background_jobs import enqueue
+from frappe import msgprint
+from frappe.model.document import Document
+import datetime
+from frappe.utils import cint, flt, cstr, now
+from datetime import date, datetime
+from erpnext.stock.utils import get_stock_balance
+from erpnext.stock.doctype.item.item import get_item_defaults, get_uom_conv_factor
+from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
+from erpnext.assets.doctype.asset_category.asset_category import get_asset_category_account
+from erpnext.setup.doctype.brand.brand import get_brand_defaults
+
+
+class StockUtils(Document):
+	pass
+@frappe.whitelist()
+def stock_availability_per_warehouse(item_code):
+	warehouses =  frappe.db.get_list('Warehouse', filters={
+    'disabled': "0"
+	})
+	warehouse_json ={}
+	payload =[]
+	global_shortage ="yes"
+	for warehouse in warehouses:
+		warehouse_name = warehouse.name
+		balance = get_stock_balance(item_code, warehouse_name)
+		if balance >0:
+			global_shortage ="no"
+			warehouse_json["warehouse_name"] = warehouse_name
+			warehouse_json["balance"]=balance
+			payload.append(warehouse_json)
+	get_item_default_expense_account(item_code)
+	frappe.response["payload"]=payload
+	frappe.response["global_shortage"]=global_shortage
+def raise_surplus_task_qty(item_code, quantity_required, except_warehouse):
+	warehouses =  frappe.db.get_list('Warehouse', filters={
+    'disabled': "0",
+	'name':["!=",except_warehouse]
+	})
+	warehouse_json ={}
+	payload =[]
+	global_shortage ="yes"
+	#1. 1st we return warehouses with item balances, excluding our former store
+	for warehouse in warehouses:
+		warehouse_name = warehouse.name
+		balance = get_stock_balance(item_code, warehouse_name)
+		if balance >0:
+			global_shortage ="no"
+			warehouse_json["warehouse_name"] = warehouse_name
+			warehouse_json["balance"]=balance
+			payload.append(warehouse_json)
+	#[{"warehouse_name":"Stores-MTRH", "balance":6},{"warehouse_name":"Maintenance Store - MTRH", "balance":6}..]
+	#2. Loop through the store to return what each one of them can afford
+	qty_needed = quantity_required
+	args = frappe._dict(payload)
+	warehouse_dict ={}
+	payload_to_return =[]
+	for feasible_warehouse in args:
+		if qty_needed > 0: #IF WE STILL HAVE SOME BALANCE on QTY NEEDED
+			wh = feasible_warehouse.get("warehouse_name")
+			wh_balance = feasible_warehouse.get("balance")
+			warehouse_dict["warehouse_name"] = wh
+			if float(wh_balance) >= float(qty_needed):
+				warehouse_dict["can_afford"]=float(qty_needed) #CAN AFFORD THE WHOLE QTY NEEDED
+				qty_needed =0
+			else:
+				warehouse_dict["can_afford"]= float(wh_balance)#CAN AFFORD  ONLY ITS BALANCE
+				qty_needed = qty_needed - float(wh_balance) #DEDUCT WHAT THE STORE CAN AFFORD FROM QTY NEEDED
+			payload_to_return.append(warehouse_dict)
+	frappe.response["whatremained"]=qty_needed
+	frappe.response["payload"]=warehouse_dict
+	frappe.response["global_shortage"]=global_shortage
+@frappe.whitelist()
+def get_item_default_expense_account(item_code):
+	item_defaults = get_item_defaults(item_code, frappe.db.get_single_value("Global Defaults", "default_company"))
+	item_group_defaults = get_item_group_defaults(item_code, frappe.db.get_single_value("Global Defaults", "default_company"))
+	expense_account = get_asset_category_account(fieldname = "fixed_asset_account", item = item_code, company= frappe.db.get_single_value("Global Defaults", "default_company"))
+	if not expense_account:
+		expense_account = item_defaults.get("expense_account") or item_group_defaults.get("expense_account") or get_brand_defaults(item_code,frappe.db.get_single_value("Global Defaults", "default_company") )
+	frappe.response["expense_account"] = expense_account
+	frappe.response["company"]= frappe.db.get_single_value("Global Defaults", "default_company")
+	#return expense_account
+def stock_reconciliation_set_default_price(doc,state):
+	count =0
+	for item in doc.items:
+		print("Working")
+		item_code = item.item_code
+		price_per_unit = item.valuation_rate or 0.0
+		default_pricelist = doc.name
+		user = frappe.session.user
+		if not frappe.db.exists({
+				'doctype': 'Price List',
+				'name': default_pricelist,
+			}):
+			pricelist = frappe.db.sql("""INSERT INTO  `tabPrice List` (name,creation,modified,modified_by,owner,docstatus,currency,price_list_name,enabled,buying) values(%s,now(),now(),%s,%s,'0','KES',%s,1,1)""",(default_pricelist,user,user,default_pricelist))
+		item_name = frappe.db.get_value('Item', {'parent': item_code}, 'item_name')
+		if not frappe.db.exists({
+					'doctype': 'Item Price',
+					'price_list': default_pricelist,
+					'item_code':item_code,
+				}):
+			itempriceinsert=frappe.db.sql("""INSERT INTO  `tabItem Price` (name,creation,modified,modified_by,owner,docstatus,currency,item_description,lead_time_days,buying,selling,
+		item_name,valid_from,brand,price_list,item_code,price_list_rate) values(uuid_short(),now(),now(),%s,%s,'0','KES',%s,'0','1','0',%s,now(),%s,%s,%s,%s)""",(user,user,item_name,item_name,"-",default_pricelist,item_code,price_per_unit))
+		else:
+			itempriceinsert = frappe.db.sql("""UPDATE `tabItem Price` SET price_list_rate =%s WHERE price_list =%s AND item_code =%s""",(price_per_unit,default_pricelist,item_code))
+		#COMMON UPDATE FOR ALL SCENARIOS
+		setdefaultpricelist =frappe.db.sql("""UPDATE `tabItem Default` set default_price_list=%s where parent=%s""",(default_pricelist,item_code))
+		count = count + 1
+	frappe.msgprint("Successfully updated stock valuation rate for "+str(count)+" items.")

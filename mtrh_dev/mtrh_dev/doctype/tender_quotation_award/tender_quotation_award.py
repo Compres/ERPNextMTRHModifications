@@ -21,7 +21,7 @@ class TenderQuotationAward(Document):
 # THIS CODE MANUALLY UPDATES THE PRICELIST AND DEFAULT SUPPLIER OF AN ITEM ONLY WHEN AUTHORITY IS SOUGHT
 def update_price_list(doc, state):
 	item_code = doc.item_code
-	reference =doc.reference_number
+	reference =doc.reference_number or "Standard Buying"
 	bidders = doc.suppliers
 	bidder_payload ={}
 	for bidder in bidders:

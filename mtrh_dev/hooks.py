@@ -56,44 +56,7 @@ app_include_js = ["/assets/mtrh_dev/js/utilities.js"]
 #			"UOM","Item Group","Supplier"]
 #,"Tender Number","Tender Quotation Award",{"dt":"Item","filters":{"creation":[">","2020-05-26"],"disabled":"0"}}
 #fixtures =["Email Account"]
-website_route_rules = [
-	{"from_route": "/grns", "to_route": "Purchase Receipt"},
-	{"from_route": "/grns/<path:name>", "to_route": "grn",
-		"defaults": {
-			"doctype": "Purchase Receipt",
-			"parents": [{"label": _("Goods Received Note"), "route": "grns"}]
-		}
-	}
-]
 
-"""
-website_route_rules = [
-	{"from_route": "/deliverynumber", "to_route": "Purchase Receipt"},
-	{"from_route": "/deliverynumber/<path:name>", "to_route": "deliverynumber",
-		"defaults": {
-			"doctype": "Purchase Receipt",
-			"parents": [{"label": _("Purchase Receipt"), "route": "deliverynumber"}]
-		}
-	},
-	{"from_route": "/deliverynote", "to_route": "Purchase Receipt"},
-	{"from_route": "/deliverynote/<path:name>", "to_route": "deliverynote",
-		"defaults": {
-			"doctype": "Purchase Receipt",
-			"parents": [{"label": _("Purchase Receipt"), "route": "deliverynote"}]
-		}
-	}
-]
-"""
-standard_portal_menu_items = [	
-	{"title": _("Goods Received Note"), "route": "/grns", "reference_doctype": "Purchase Receipt", "role": "Supplier"}
-]
-
-"""
-has_website_permission = {
-	"Purchase Receipt": "erpnext.controllers.website_list_for_contact.has_website_permission"
-	
-}
-"""
 
 default_mail_footer = """MTRH Enterprise System"""
 # Installation
@@ -124,7 +87,6 @@ default_mail_footer = """MTRH Enterprise System"""
 # ---------------
 # Hook on document methods and events
 
-
 doc_events = {
 	"Material Request":{
 		"before_save":"mtrh_dev.mtrh_dev.utilities.process_workflow_log",	
@@ -150,7 +112,7 @@ doc_events = {
 		"before_submit":"mtrh_dev.mtrh_dev.tqe_on_submit_operations.apply_tqe_operation"
 	},
 	"Request for Quotation":{
-		"before_save":"mtrh_dev.mtrh_dev.workflow_custom_action.update_material_request_item_status",		
+		"before_save":["mtrh_dev.mtrh_dev.workflow_custom_action.update_material_request_item_status","mtrh_dev.mtrh_dev.utilities.Check_Rfq_Opinion"],		
 		"on_submit":["mtrh_dev.mtrh_dev.tqe_evaluation.send_rfq_supplier_emails","mtrh_dev.mtrh_dev.tqe_evaluation.send_adhoc_members_emails"]
 				
 	},
@@ -162,11 +124,20 @@ doc_events = {
 	},
 	"Quality Inspection":{
 		"before_submit":"mtrh_dev.mtrh_dev.utilities.process_workflow_log",
-		"on_submit":"mtrh_dev.mtrh_dev.purchase_receipt_utils.update_percentage_inspected"
+		"on_submit":["mtrh_dev.mtrh_dev.purchase_receipt_utils.update_percentage_inspected","mtrh_dev.mtrh_dev.tqe_evaluation.create_grn_qualityinspectioncert_debitnote_creditnote"],
+	},
+	"Store Allocation":{
+		"before_save":"mtrh_dev.mtrh_dev.doctype.store_allocation.store_allocation.check_duplicate_allocation",
+		"on_submit":"mtrh_dev.mtrh_dev.doctype.store_allocation.store_allocation.insert_user_permissions"
+	},
+	"Stock Reconciliation":{
+		"before_save":["mtrh_dev.mtrh_dev.utilities.process_workflow_log", "mtrh_dev.mtrh_dev.stock_utils.stock_reconciliation_set_default_price"]
+		#"on_submit":"mtrh_dev.mtrh_dev.doctype.store_allocation.store_allocation.insert_user_permissions"
 	}
-	#"Purchase Receipt":{
-		#"on_submit":"mtrh_dev.mtrh_dev.tqe_evaluation.Onsubmit_Of_Purchase_Receipt"
+	#"Issue":{
+		#"on_submit":"mtrh_dev.mtrh_dev.task.Generate_Task"
 	#}
+	
  }
 
 # Scheduled Tasks
@@ -192,13 +163,10 @@ doc_events = {
 scheduler_events = {
     "cron": {
        "* * * * *": [
-          "frappe.email.queue.flush",
-			"frappe.email.doctype.email_account.email_account.pull"
-       ],
-		#SEND SUPPLIER "INVOICE US"
-		"* * * * *": [
+			"frappe.email.queue.flush",
+			"frappe.email.doctype.email_account.email_account.pull",
 			"mtrh_dev.mtrh_dev.purchase_receipt_utils.delivery_completed_status"
-        ],
+       ],
 		"hourly": [
 			"frappe.integrations.doctype.google_drive.google_drive.daily_backup"
 		]

@@ -54,18 +54,63 @@ def send_message(payload_to_send):
 	frappe.response["payload"] = payload
 	frappe.response["response"] =data
 @frappe.whitelist()
-def duplicate_checker(item):
-	frappe.msgprint(item)
+def duplicate_checker(item_code):
+	item = frappe.db.get_value("Item",{"item_code":item_code},"item_name")
 	items = frappe.db.get_list('Item',
 			filters={
-				'disabled': "0"
+				'disabled': "0",
+				'item_code':["NOT LIKE",item_code] #EXCLUDE THIS PARTICULAR ITEM
 			},
-			fields=['item_name'],
+			fields=['item_name','item_code','item_group'],
 			as_list=False
 		)
-	itemsarray = []
+	itemsarray =[]
+	itemdict={}
+	for row in items:
+		ratio = fuzz.token_sort_ratio(item,str(row.item_name))
+		itemcode = row.item_code
+		itemname =row.item_name
+		itemgroup =row.item_group
+		if ratio > 80:
+			itemdict["item_code"] = itemcode
+			itemdict["item_name"] = itemname
+			itemdict["item_category"] = itemgroup
+			itemdict["ratio"] = ratio
+			itemsarray.append(itemdict)
+			itemdict ={}
+	#payload = process.extract(item, itemsarray)
+	frappe.response["potential_duplicates"]=itemsarray
+	frappe.response["iteminquestion"] = item
+@frappe.whitelist()
+def canceldocuments(payload):
+	#payload_to_use = json.loads(payload)
+	items = frappe.db.get_list('Item',
+				filters={		
+					'item_code':["NOT IN", ["ITM000299", "760000","ITM000173"]] #760000
+				},
+				fields=['name'],
+				as_list=False
+			)
+	myarr=[]
+	payload_to_use =[]
 	for item in items:
-		itemsarray.append(item.item_name)
-	payload = process.extract(item, itemsarray)
-
-	frappe.response["duplicates"]=payload
+		payload_to_use.append(str(item.name))
+	for lisitem in payload_to_use:
+		item_code = lisitem
+		#myarr.append(lisitem)
+		#frappe.db.set_value("Item",item_code,"disabled","1")
+		frappe.delete_doc("Item",item_code)
+		"""awards = frappe.db.get_list('Tender Quotation Award',
+				filters={
+					'docstatus': "1",
+					'item_code':item_code
+				},
+				fields=['name'],
+				as_list=False
+			)
+		for award in awards:
+			docname = award.name
+			frappe.db.set_value("Tender Quotation Award",docname,"docstatus","2")
+			frappe.delete_doc("Tender Quotation Award",docname)
+		#frappe.delete_doc("Item",item_code)"""
+	frappe.response["items"]=myarr

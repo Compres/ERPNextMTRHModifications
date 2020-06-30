@@ -25,11 +25,13 @@ def attach_file_to_doc(filedata, doc_type, doc_name, file_name):
 		for fd in fd_list:
 			content_type = mimetypes.guess_type(fd["filename"])[0]
 			filedoc = save_file_on_filesystem(fd["filename"], fd["dataurl"], folder= folder, content_type=content_type, is_private=0)
+		#frappe.msgprint(filedoc)	
 	return filedoc
 
 def save_file_on_filesystem(fname, content, folder=None, content_type=None, is_private=0):
 	fpath = write_file(content, fname, folder, is_private)
 	#frappe.msgprint(_("Path: " + fpath + ", Folder: " + folder)
+	#frappe.msgprint(fpath)
 	if folder:
 		if is_private:
 			file_url = "/private/files/{0}/{1}".format(folder, fname)
@@ -40,6 +42,7 @@ def save_file_on_filesystem(fname, content, folder=None, content_type=None, is_p
 			file_url = "/private/files/{0}".format(fname)
 		else:
 			file_url = "/files/{0}".format(fname)
+			
 	return file_url
 	#return {
 	#	'file_name': os.path.basename(fpath),
@@ -84,6 +87,8 @@ def create_supplier_quotation(doc):
 			"supplier": doc.get('supplier'),
 			"terms": doc.get("terms"),
 			"company": doc.get("company"),
+			#ADDED REQUEST FOR QUOTATION FIELD TO ENSURE PARENT SQ IS TIED TO AN RFQ JUST AS ITS CHILD IS:
+			"request_for_quotation":rfq,
 			"currency": doc.get('currency') or get_party_account_currency('Supplier', doc.get('supplier'), doc.get('company')),
 			"buying_price_list": doc.get('buying_price_list') or frappe.db.get_value('Buying Settings', None, 'buying_price_list')
 		})
@@ -125,11 +130,13 @@ def create_rfq_items(sq_doc, supplier, data):
 def process_workflow_log(doc, state):
 	if state == "before_save":
 		workflow = get_workflow_name(doc.get('doctype'))
-		if not workflow: return
-		if is_workflow_action_already_created(doc): return
-		this_doc_workflow_state = get_doc_workflow_state(doc)
-		if not this_doc_workflow_state:
+		if not workflow: 
 			this_doc_workflow_state ="Draft"
+		else:
+			if is_workflow_action_already_created(doc): return
+			this_doc_workflow_state = get_doc_workflow_state(doc)
+			if not this_doc_workflow_state:
+				this_doc_workflow_state ="Draft"
 		the_decision = "Actioned To: " + this_doc_workflow_state
 		
 	elif state == "before_submit":
@@ -146,10 +153,20 @@ def process_workflow_log(doc, state):
 	log_actions(doc, the_decision)
 
 	#================Generation of Quality Inspection========================
+	#frappe.throw("doctype: " + doc.get('doctype') + ", state: " + state + ", workflow: " + get_doc_workflow_state(doc))
 	if doc.get('doctype')=="Purchase Receipt" and state == "before_save" and get_doc_workflow_state(doc) =="Pending Inspection":
 		#function to insert into Quality Inspection
 		#frappe.msgprint("Logging: " + get_doc_workflow_state(doc))
 		create_quality_inspection(doc)
+	
+def Check_Rfq_Opinion(doc, state):	
+	if  get_doc_workflow_state(doc) =="Pending Supply Chain Management Approval":
+		#if doc.get("mode_of_purchase_opinion") is None:
+	# doc.get('doctype')=="Request for Quotation":# and state == "before_save" and get_doc_workflow_state(doc) =="Pending Contract Approval" and doc.get("mode_of_purchase_opinion")=="":
+		#num = len(doc.get("mode_of_purchase_opinion"))
+		if not doc.get("mode_of_purchase_opinion"):
+		#frappe.msgprint(str(doc.get("mode_of_purchase_opinion")))
+			frappe.throw("Mode of Purchase Opinion is Mandatory")
 
 def create_quality_inspection(doc):
 	#frappe.throw(doc.name)
@@ -167,30 +184,27 @@ def create_quality_inspection(doc):
 		itemname=item.get("item_name")		
 		qty=item.get("qty")		
 		amount= item.get("amount")		
-	template_name= frappe.db.get_value('Item', item.get("item_code"), 'quality_inspection_template')	
-	today = str(date.today())
-	user=frappe.session.user
-	doc_type = doc.get('doctype')
-	#frappe.throw(doc_type)	
-	docc = frappe.new_doc('Quality Inspection')
-	docc.update(
-				{	
-					"naming_series":"MAT-QA-.YYYY.-",
-					"report_date":today,	
-					"inspection_type":"Incoming",
-					"sample_size":qty,
-					"status":"Accepted",
-					"inspected_by":user,
-					"item_code":itemcode,
-					"item_name":itemname,
-					"reference_type":doc_type,
-					"reference_name":docname,
-					"quality_inspection_template":template_name,				
-																			
-				}
-			)
-	docc.insert(ignore_permissions = True)
-	
+		template_name= frappe.db.get_value('Item', item.get("item_code"), 'quality_inspection_template')	
+		today = str(date.today())
+		user = frappe.session.user
+		doc_type = doc.get('doctype')
+		#frappe.throw(doc_type)	
+		docc = frappe.new_doc('Quality Inspection')
+		docc.update({
+			"naming_series":"MAT-QA-.YYYY.-",
+			"report_date":today,	
+			"inspection_type":"Incoming",
+			"total_sample_size":qty,
+			"sample_size":"0",
+			"status":"Draft",
+			"inspected_by":user,
+			"item_code":itemcode,
+			"item_name":itemname,
+			"reference_type":doc_type,
+			"reference_name":docname,
+			"quality_inspection_template":template_name,
+		})
+		docc.insert(ignore_permissions = True)
 
 def log_actions(doc, action_taken):
 	logged_in_user = frappe.session.user
@@ -297,6 +311,7 @@ def comment_on_action(doc, state):
 #====================================================================================================================================================
 # VALIDATE THE BUDGET ON SUBMIT AND ALERT IF BUDGET NOT AVAILABLE.
 #====================================================================================================================================================
+
 def validate_budget(doc, state):
 	purchase_order_items = doc.get("items")
 	unique_departments = []
@@ -341,9 +356,16 @@ def validate_budget(doc, state):
 		
 		#2 GET BUDGET AMOUNT:
 		budget_amount = frappe.db.get_value('Budget Account', {'parent':budget, "account":expense_account, "docstatus":"1"}, 'budget_amount')
+		#============expired lpos
+		#total_amount=0.0
+		#total_expired_amount =frappe.db.sql("""SELECT  sum(amount*((a.per_received)/100)) as total FROM `tabPurchase Order Item` as b,`tabPurchase Order` as a""")
+		total_expired_amount =frappe.db.sql("""SELECT  SUM(amount*((a.per_received)/100)) as total FROM `tabPurchase Order Item` as b,`tabPurchase Order` as a WHERE b.creation BETWEEN %s AND %s AND a.name=b.parent AND a.schedule_date < now()
+		#AND b.expense_account= %s AND b.docstatus=1""",(fiscal_year_starts,fiscal_year_ends,expense_account))
+		#frappe.throw(total_expired_amount)
+		#==========end of expired lpos
 		
 		#3. GET SUM OF ALL APPROVED PURCHASE ORDERS:
-		total_commitments =  frappe.get_list('Purchase Order Item',
+		total_commitments = frappe.get_list('Purchase Order Item',
 			filters = {
 				'department':department,
 				'expense_account':expense_account,
@@ -362,14 +384,24 @@ def validate_budget(doc, state):
 		sql_department_expense_amount = _("""SELECT SUM(amount) as total_amount from `tabPurchase Order Item` WHERE department = '{0}' AND expense_account = '{1}' AND creation >= '{2}' AND creation < '{3}' AND  docstatus = 1""").format(department, expense_account, fiscal_year_starts, fiscal_year_ends)
 		#frappe.msgprint(sql_department_expense_amount)
 		total_commitments = frappe.db.sql(sql_department_expense_amount)
+		commitments = 0.0
 		if total_commitments and total_commitments[0][0]:
 			commitments = total_commitments[0][0]
 		if commitments is None:
 			commitments = 0.0
 		if budget_amount is None:
 			budget_amount = 0.0
-		balance = float(budget_amount) - float(commitments)
+		balance = float(budget_amount)-(float(commitments))
+		#balance=(balance)+(total_expired_amount)
 		#frappe.msgprint("""Budget Amount: """ + str(budget_amount) + """,  Total Committments: """ + str(commitments) + """, fiscal_year_starts: """ + str(fiscal_year_starts) )
 		if(float(balance) < float(amount) ):
 			frappe.throw("""Sorry, this order will not proceed because requests for Department [<b>"""+department+"""</b>] Expense account [<b>"""+expense_account+"""</b>] exceed the current vote balance. <br><br> Vote Balance: [<b>"""+str(balance)+"""</b>]<br>Needed Amount:[<b>"""+str(amount)+"""</b>] """, title = """Budget Exceeded!""")
 	process_workflow_log(doc, state)
+
+#====================================================================================================================================================
+# FORCEFULLY UPDATE STATUS OF A DOCUMENT E.G. CANCEL AT DRAFT STAGE...
+#====================================================================================================================================================
+@frappe.whitelist()
+def forcefully_update_doc_field(doc_type, doc_name, field, data):
+	sql_to_run = """UPDATE `tab""" + doc_type + """` SET `""" + field + """` = '{0}' WHERE `name` = '{1}'""".format(data, doc_name)
+	frappe.db.sql(sql_to_run)

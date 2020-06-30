@@ -1,4 +1,5 @@
 {
+ "actions": [],
  "autoname": "hash",
  "creation": "2020-04-02 11:03:10.110629",
  "doctype": "DocType",
@@ -83,11 +84,15 @@
    "print_width": "100px",
    "reqd": 1,
    "search_index": 1,
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "100px"
   },
   {
    "fieldname": "col_break1",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "item_name",
@@ -99,13 +104,17 @@
    "print_hide": 1,
    "print_width": "100px",
    "search_index": 1,
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "100px"
   },
   {
    "collapsible": 1,
    "fieldname": "section_break_4",
    "fieldtype": "Section Break",
-   "label": "Description"
+   "label": "Description",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "description",
@@ -115,6 +124,8 @@
    "oldfieldtype": "Text",
    "print_width": "250px",
    "reqd": 1,
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "250px"
   },
   {
@@ -126,7 +137,9 @@
    "options": "Item Group",
    "print_hide": 1,
    "read_only": 1,
-   "search_index": 1
+   "search_index": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "brand",
@@ -138,46 +151,62 @@
    "print_hide": 1,
    "print_width": "100px",
    "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "100px"
   },
   {
    "collapsible": 1,
    "fieldname": "image_section",
    "fieldtype": "Section Break",
-   "label": "Image"
+   "label": "Image",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "label": "Image",
    "print_hide": 1,
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "manufacture_details",
    "fieldtype": "Section Break",
-   "label": "Manufacture"
+   "label": "Manufacture",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "manufacturer",
    "fieldtype": "Link",
    "label": "Manufacturer",
-   "options": "Manufacturer"
+   "options": "Manufacturer",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "column_break_12",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "manufacturer_part_no",
    "fieldtype": "Data",
    "label": "Manufacturer Part Number",
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "quantity_and_warehouse",
    "fieldtype": "Section Break",
-   "label": "Quantity and Warehouse"
+   "label": "Quantity and Warehouse",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "columns": 1,
@@ -189,6 +218,8 @@
    "oldfieldtype": "Currency",
    "print_width": "80px",
    "reqd": 1,
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "80px"
   },
   {
@@ -202,6 +233,8 @@
    "options": "UOM",
    "print_width": "70px",
    "reqd": 1,
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "70px"
   },
   {
@@ -209,7 +242,9 @@
    "fieldtype": "Float",
    "label": "UOM Conversion Factor",
    "print_hide": 1,
-   "reqd": 1
+   "reqd": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "stock_uom",
@@ -218,7 +253,9 @@
    "options": "UOM",
    "print_hide": 1,
    "read_only": 1,
-   "reqd": 1
+   "reqd": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "columns": 3,
@@ -229,11 +266,15 @@
    "oldfieldtype": "Link",
    "options": "Warehouse",
    "print_width": "100px",
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "100px"
   },
   {
    "fieldname": "col_break2",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "bold": 1,
@@ -244,20 +285,27 @@
    "oldfieldname": "schedule_date",
    "oldfieldtype": "Date",
    "print_width": "100px",
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "100px"
   },
   {
    "fieldname": "rate",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Rate"
+   "label": "Rate",
+   "reqd": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Amount",
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "stock_qty",
@@ -265,12 +313,16 @@
    "label": "Stock Qty",
    "no_copy": 1,
    "print_hide": 1,
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "more_info",
    "fieldtype": "Section Break",
-   "label": "More Information"
+   "label": "More Information",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "lead_time_date",
@@ -280,7 +332,9 @@
    "oldfieldname": "lead_time_date",
    "oldfieldtype": "Date",
    "print_hide": 1,
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "sales_order",
@@ -288,7 +342,9 @@
    "label": "Sales Order",
    "options": "Sales Order",
    "print_hide": 1,
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "sales_order_item",
@@ -298,7 +354,9 @@
    "no_copy": 1,
    "print_hide": 1,
    "read_only": 1,
-   "search_index": 1
+   "search_index": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "production_plan",
@@ -307,7 +365,9 @@
    "no_copy": 1,
    "options": "Production Plan",
    "print_hide": 1,
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "material_request_plan_item",
@@ -315,11 +375,15 @@
    "label": "Material Request Plan Item",
    "no_copy": 1,
    "print_hide": 1,
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "col_break3",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "min_order_qty",
@@ -331,6 +395,8 @@
    "print_hide": 1,
    "print_width": "70px",
    "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "70px"
   },
   {
@@ -344,6 +410,8 @@
    "print_hide": 1,
    "print_width": "70px",
    "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1,
    "width": "70px"
   },
   {
@@ -353,7 +421,9 @@
    "no_copy": 1,
    "print_hide": 1,
    "read_only": 1,
-   "report_hide": 1
+   "report_hide": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "ordered_qty",
@@ -363,51 +433,69 @@
    "oldfieldname": "ordered_qty",
    "oldfieldtype": "Currency",
    "print_hide": 1,
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "received_qty",
    "fieldtype": "Float",
-   "label": "Received Quantity"
+   "label": "Received Quantity",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "accounting_details",
    "fieldtype": "Section Break",
-   "label": "Accounting Details"
+   "label": "Accounting Details",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "expense_account",
    "fieldtype": "Link",
    "label": "Expense Account",
    "options": "Account",
-   "print_hide": 1
+   "print_hide": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "collapsible": 1,
    "fieldname": "accounting_dimensions_section",
    "fieldtype": "Section Break",
-   "label": "Accounting Dimensions"
+   "label": "Accounting Dimensions",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
-   "options": "Project"
+   "options": "Project",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "dimension_col_break",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "cost_center",
    "fieldtype": "Link",
    "label": "Cost Center",
    "options": "Cost Center",
-   "print_hide": 1
+   "print_hide": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "section_break_37",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "allow_on_submit": 1,
@@ -418,101 +506,138 @@
    "no_copy": 1,
    "oldfieldname": "page_break",
    "oldfieldtype": "Check",
-   "print_hide": 1
+   "print_hide": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "fs_yr",
    "fieldtype": "Link",
    "label": "Fiscal Year",
-   "options": "Fiscal Year"
+   "options": "Fiscal Year",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "department_name",
    "fieldtype": "Link",
    "label": "Department Name",
    "options": "Department",
-   "read_only": 1
+   "read_only": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "procurement_method",
    "fieldtype": "Link",
    "label": "Procurement Method",
    "options": "Procurement Method",
-   "reqd": 1
+   "reqd": 1,
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "procurement_plan_boilerplate_section",
    "fieldtype": "Section Break",
-   "label": "Procurement Plan Boilerplate"
+   "label": "Procurement Plan Boilerplate",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "column_break_49",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "source_of_funds",
    "fieldtype": "Select",
    "label": "Source of funds",
-   "options": "\nGovernment of Kenya\nDonor"
+   "options": "\nGovernment of Kenya\nDonor",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "description": "Number of days you plan to execute each of the tasks e.g if Bid evaluation takes 2 (months), input 60 (days)",
    "fieldname": "time_process_section",
    "fieldtype": "Section Break",
-   "label": "Time Process"
+   "label": "Time Process",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "inviteadvertise_tender",
    "fieldtype": "Int",
-   "label": "Invite/advertise tender"
+   "label": "Invite/advertise tender",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "bid_opening",
    "fieldtype": "Int",
-   "label": "Bid opening"
+   "label": "Bid opening",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "bid_evaluation",
    "fieldtype": "Int",
-   "label": "Bid evaluation"
+   "label": "Bid evaluation",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "tender_award",
    "fieldtype": "Int",
-   "label": "Tender award"
+   "label": "Tender award",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "notification_of_award",
    "fieldtype": "Int",
-   "label": "Notification of award"
+   "label": "Notification of award",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "contract_signing",
    "fieldtype": "Int",
-   "label": "Contract signing"
+   "label": "Contract signing",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "total_time_to_contract_signature",
    "fieldtype": "Int",
-   "label": "Total time to contract signature"
+   "label": "Total time to contract signature",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "date_for_completion_of_contract",
    "fieldtype": "Date",
-   "label": "Date for completion of contract"
+   "label": "Date for completion of contract",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "column_break_60",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "show_days": 1,
+   "show_seconds": 1
   },
   {
    "fieldname": "section_break_61",
    "fieldtype": "Section Break",
-   "label": "Date for Completion of Contract fulfilment"
+   "label": "Date for Completion of Contract fulfilment",
+   "show_days": 1,
+   "show_seconds": 1
   }
  ],
  "istable": 1,
- "modified": "2020-05-10 12:38:57.713483",
+ "links": [],
+ "modified": "2020-06-22 13:17:43.762385",
  "modified_by": "Administrator",
  "module": "MTRH Dev",
  "name": "Procurement Plan Item",

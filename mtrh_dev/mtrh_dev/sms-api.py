@@ -20,7 +20,7 @@ from datetime import date, datetime
 
 class SMSApi(Document):
 	pass
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def send_message(payload_to_send):
 	msgprint(payload_to_send)
 	#payload_to_use = json.loads(payload_to_send)
