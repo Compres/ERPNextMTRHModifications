@@ -133,6 +133,9 @@ doc_events = {
 	"Stock Reconciliation":{
 		"before_save":["mtrh_dev.mtrh_dev.utilities.process_workflow_log", "mtrh_dev.mtrh_dev.stock_utils.stock_reconciliation_set_default_price"]
 		#"on_submit":"mtrh_dev.mtrh_dev.doctype.store_allocation.store_allocation.insert_user_permissions"
+	},
+	"Stock Entry":{
+		"before_save": "mtrh_dev.mtrh_dev.utilities.process_workflow_log"
 	}
 	#"Issue":{
 		#"on_submit":"mtrh_dev.mtrh_dev.task.Generate_Task"
@@ -162,15 +165,16 @@ doc_events = {
 
 scheduler_events = {
     "cron": {
-       "* * * * *": [
+        "* * * * *": [
 			"frappe.email.queue.flush",
 			"frappe.email.doctype.email_account.email_account.pull",
-			"mtrh_dev.mtrh_dev.purchase_receipt_utils.delivery_completed_status"
-       ],
-		"hourly": [
-			"frappe.integrations.doctype.google_drive.google_drive.daily_backup"
-		]
-    }
+			#"mtrh_dev.mtrh_dev.workflow_custom_action.auto_generate_purchase_order_using_cron"
+			#"mtrh_dev.mtrh_dev.purchase_receipt_utils.delivery_completed_status"
+        ]
+	},
+	"hourly": [
+		"frappe.integrations.doctype.google_drive.google_drive.daily_backup",
+	]
 }
 # Testing
 # -------

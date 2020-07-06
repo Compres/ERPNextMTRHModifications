@@ -20,12 +20,12 @@ class TenderQuotationAward(Document):
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # THIS CODE MANUALLY UPDATES THE PRICELIST AND DEFAULT SUPPLIER OF AN ITEM ONLY WHEN AUTHORITY IS SOUGHT
 def update_price_list(doc, state):
-	item_code = doc.item_code
-	reference =doc.reference_number or "Standard Buying"
-	bidders = doc.suppliers
+	item_code = doc.get("item_code")
+	reference =doc.get("reference_number") or "Standard Buying"
+	bidders = doc.get("suppliers")
 	bidder_payload ={}
 	for bidder in bidders:
-		if(bidder.awarded_bidder):
+		if(bidder.get("awarded_bidder")):
 			bidder_payload = bidder
 	suppname  = bidder_payload.get("supplier_name")
 	price_per_unit = bidder_payload.get("unit_price")
@@ -40,6 +40,15 @@ def update_price_list(doc, state):
 		'price_list': reference,
 		'item_code':item_code,
 	})
+	company = frappe.db.get_single_value("Global Defaults", "default_company")
+	item_default_exists = frappe.db.exists({
+		'doctype': 'Item Default',
+		'parent':item_code,
+	})
+	#frappe.throw("Starting processing of payload for {0}...".format(item_code))
+	if not item_default_exists:
+		frappe.msgprint("Creating a defaults entry...")
+		frappe.db.sql("""INSERT INTO  `tabItem Default` (name,creation,modified,modified_by,owner,docstatus,parent,company, parenttype, parentfield) values(uuid_short(),now(),now(),%s,%s,'0',%s,%s,"Item","item_defaults")""",(user,user,item_code,company))
 	supplierdefault = frappe.db.sql("""UPDATE `tabItem Default` set default_supplier=%s where parent=%s""",(suppname,item_code))
 	if not pricelist_exists:
 		pricelist = frappe.db.sql("""INSERT INTO  `tabPrice List` (name,creation,modified,modified_by,owner,docstatus,currency,price_list_name,enabled,buying) values(%s,now(),now(),%s,%s,'0','KES',%s,1,1)""",(reference,user,user,reference))

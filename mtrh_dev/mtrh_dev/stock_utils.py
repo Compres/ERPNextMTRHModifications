@@ -99,22 +99,46 @@ def stock_reconciliation_set_default_price(doc,state):
 		price_per_unit = item.valuation_rate or 0.0
 		default_pricelist = doc.name
 		user = frappe.session.user
-		if not frappe.db.exists({
+		#function  here
+		update_price_list(item_code, item_name, price_per_unit,default_pricelist,user)
+		count = count + 1
+	frappe.msgprint("Successfully updated stock valuation rate for "+str(count)+" items.")
+def update_price_list(item_code, item_name, price_per_unit,default_pricelist,user):
+	print("Starting business")
+	#======================================================================
+	#INSERT A BLANK ROW IN ITEM DEFAULT IF NONE EXIST ELSE DO NOTHING
+	#======================================================================
+	company = frappe.db.get_single_value("Global Defaults", "default_company")
+	item_default_exists = frappe.db.exists({
+		'doctype': 'Item Default',
+		'parent':item_code,
+	})
+	#frappe.throw("Starting processing of payload for {0}...".format(item_code))
+	if not item_default_exists:
+		frappe.msgprint("Creating a defaults entry...")
+		frappe.db.sql("""INSERT INTO  `tabItem Default` (name,creation,modified,modified_by,owner,docstatus,parent,company, parenttype, parentfield) values(uuid_short(),now(),now(),%s,%s,'0',%s,%s,"Item","item_defaults")""",(user,user,item_code,company))
+	#======================================================================
+	#INSERT A PRICE LIST IF ONE DOES NOT EXIST ELSE DO NOTHING
+	#======================================================================
+	if not frappe.db.exists({
 				'doctype': 'Price List',
 				'name': default_pricelist,
 			}):
 			pricelist = frappe.db.sql("""INSERT INTO  `tabPrice List` (name,creation,modified,modified_by,owner,docstatus,currency,price_list_name,enabled,buying) values(%s,now(),now(),%s,%s,'0','KES',%s,1,1)""",(default_pricelist,user,user,default_pricelist))
-		item_name = frappe.db.get_value('Item', {'parent': item_code}, 'item_name')
-		if not frappe.db.exists({
-					'doctype': 'Item Price',
-					'price_list': default_pricelist,
-					'item_code':item_code,
-				}):
-			itempriceinsert=frappe.db.sql("""INSERT INTO  `tabItem Price` (name,creation,modified,modified_by,owner,docstatus,currency,item_description,lead_time_days,buying,selling,
-		item_name,valid_from,brand,price_list,item_code,price_list_rate) values(uuid_short(),now(),now(),%s,%s,'0','KES',%s,'0','1','0',%s,now(),%s,%s,%s,%s)""",(user,user,item_name,item_name,"-",default_pricelist,item_code,price_per_unit))
-		else:
-			itempriceinsert = frappe.db.sql("""UPDATE `tabItem Price` SET price_list_rate =%s WHERE price_list =%s AND item_code =%s""",(price_per_unit,default_pricelist,item_code))
-		#COMMON UPDATE FOR ALL SCENARIOS
-		setdefaultpricelist =frappe.db.sql("""UPDATE `tabItem Default` set default_price_list=%s where parent=%s""",(default_pricelist,item_code))
-		count = count + 1
-	frappe.msgprint("Successfully updated stock valuation rate for "+str(count)+" items.")
+	item_name = frappe.db.get_value('Item', {'parent': item_code}, 'item_name')
+	#==============================================================================================
+	#INSERT THE ITEM PRICE IF ONE DOES NOT EXIST, ELSE UPDATE EXISTING ITEM PRICE FOR THIS ITEM CODE
+	#==============================================================================================
+	if not frappe.db.exists({
+				'doctype': 'Item Price',
+				'price_list': default_pricelist,
+				'item_code':item_code,
+			}):
+		itempriceinsert=frappe.db.sql("""INSERT INTO  `tabItem Price` (name,creation,modified,modified_by,owner,docstatus,currency,item_description,lead_time_days,buying,selling,
+	item_name,valid_from,brand,price_list,item_code,price_list_rate) values(uuid_short(),now(),now(),%s,%s,'0','KES',%s,'0','1','0',%s,now(),%s,%s,%s,%s)""",(user,user,item_name,item_name,"-",default_pricelist,item_code,price_per_unit))
+	else:
+		itempriceinsert = frappe.db.sql("""UPDATE `tabItem Price` SET price_list_rate =%s WHERE price_list =%s AND item_code =%s""",(price_per_unit,default_pricelist,item_code))
+	#======================================================================
+	#UPDATE THE PRICE LIST FOR THIS ITEM
+	#======================================================================
+	setdefaultpricelist =frappe.db.sql("""UPDATE `tabItem Default` set default_price_list=%s where parent=%s""",(default_pricelist,item_code))
