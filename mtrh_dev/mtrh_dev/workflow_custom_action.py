@@ -658,7 +658,7 @@ def employee_set_roles(doc,state):
 				"doctype": "Has Role",
 				"role":"System Manager"
 			})
-			u.role_profile_name = 'System Administrator'
+			u.role_profile_name = 'Beta User'
 			u.save(ignore_permissions=True)
 		except:
 			frappe.throw("Sorry an error occured")
