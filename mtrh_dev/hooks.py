@@ -140,6 +140,9 @@ doc_events = {
 	},
 	"Stock Entry":{
 		"before_save": "mtrh_dev.mtrh_dev.utilities.process_workflow_log"
+	},
+	"Employee":{
+		"before_save": "mtrh_dev.mtrh_dev.workflow_custom_action.employee_set_roles"
 	}
  }
 

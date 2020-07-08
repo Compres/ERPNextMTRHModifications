@@ -648,5 +648,19 @@ def budget_balance(payload, document_date):
 		itemrow["balance_valid"] = balance_valid
 		outputArr.append(itemrow)
 	frappe.response["message"] = outputArr
+def employee_set_roles(doc,state):
+	if doc.get("user_id") and frappe.db.exists("User", doc.get("user_id")):
+		email = doc.get("user_id")
+		"""This should only work after a user has been created"""
+		try:
+			u = frappe.get_doc('User', email)
+			u.append('roles',{
+				"doctype": "Has Role",
+				"role":"System Manager"
+			})
+			u.role_profile_name = 'System Administrator'
+			u.save(ignore_permissions=True)
+		except:
+			frappe.throw("Sorry an error occured")
 
 
