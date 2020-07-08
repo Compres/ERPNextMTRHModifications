@@ -44,7 +44,7 @@ def get_context(context):
 		context.available_loyalty_points = int(loyalty_program_details.get("loyalty_points"))
 
 def get_attachments(dt, dn):
-        return frappe.get_all("File",s
+        return frappe.get_all("File",
 			fields=["name", "file_name", "file_url", "is_private"],
 			filters = {"attached_to_name": dn, "attached_to_doctype": dt, "is_private":0})
 def get_purchase_receipt(ordernum):

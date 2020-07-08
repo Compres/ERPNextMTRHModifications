@@ -58,7 +58,7 @@ app_include_js = ["/assets/mtrh_dev/js/utilities.js"]
 #fixtures =["Email Account"]
 
 
-default_mail_footer = """MTRH Enterprise System"""
+default_mail_footer = "MTRH Enterprise System"
 # Installation
 # ------------
 
@@ -134,13 +134,13 @@ doc_events = {
 		"before_save":["mtrh_dev.mtrh_dev.utilities.process_workflow_log", "mtrh_dev.mtrh_dev.stock_utils.stock_reconciliation_set_default_price"]
 		#"on_submit":"mtrh_dev.mtrh_dev.doctype.store_allocation.store_allocation.insert_user_permissions"
 	},
+	"Item":{
+		"before_submit":"mtrh_dev.mtrh_dev.stock_utils.item_workflow_operations",
+		"on_submit":"mtrh_dev.mtrh_dev.stock_utils.item_workflow_operations"
+	},
 	"Stock Entry":{
 		"before_save": "mtrh_dev.mtrh_dev.utilities.process_workflow_log"
 	}
-	#"Issue":{
-		#"on_submit":"mtrh_dev.mtrh_dev.task.Generate_Task"
-	#}
-	
  }
 
 # Scheduled Tasks
@@ -168,8 +168,8 @@ scheduler_events = {
         "* * * * *": [
 			"frappe.email.queue.flush",
 			"frappe.email.doctype.email_account.email_account.pull",
-			#"mtrh_dev.mtrh_dev.workflow_custom_action.auto_generate_purchase_order_using_cron"
-			#"mtrh_dev.mtrh_dev.purchase_receipt_utils.delivery_completed_status"
+			"frappe.email.doctype.email_account.email_account.notify_unreplied",
+			"frappe.monitor.flush"
         ]
 	},
 	"hourly": [

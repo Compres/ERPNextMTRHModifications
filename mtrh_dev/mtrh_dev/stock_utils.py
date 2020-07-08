@@ -96,6 +96,7 @@ def stock_reconciliation_set_default_price(doc,state):
 	for item in doc.items:
 		print("Working")
 		item_code = item.item_code
+		item_name = item.item_name
 		price_per_unit = item.valuation_rate or 0.0
 		default_pricelist = doc.name
 		user = frappe.session.user
@@ -142,3 +143,9 @@ def update_price_list(item_code, item_name, price_per_unit,default_pricelist,use
 	#UPDATE THE PRICE LIST FOR THIS ITEM
 	#======================================================================
 	setdefaultpricelist =frappe.db.sql("""UPDATE `tabItem Default` set default_price_list=%s where parent=%s""",(default_pricelist,item_code))
+def item_workflow_operations(doc, state):
+	if state == "before_save" and not doc.get("docstatus")==1:
+		frappe.db.set_value("Item",doc.get("name"),"disabled",1)
+	if state=="on_submit":
+		frappe.db.set_value("Item",doc.get("name"),"disabled",0)
+		  
